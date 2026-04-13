@@ -1,0 +1,25 @@
+{
+  "name": "My Life on Hub",
+  "short_name": "My Life on Hub",
+  "description": "Seu hub pessoal de metas e organização de vida",
+  "start_url": "https://mylifeonhub.com.br/",
+  "scope": "https://mylifeonhub.com.br/",
+  "display": "browser",
+  "background_color": "#ffffff",
+  "theme_color": "#0F6E56",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
