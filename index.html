@@ -337,7 +337,15 @@ const db=firebase.firestore();
 
 function loginGoogle(){
   const provider=new firebase.auth.GoogleAuthProvider();
-  auth.signInWithRedirect(provider).catch(e=>alert('Erro: '+e.message));
+  // Tenta popup primeiro — funciona na maioria dos casos
+  // Se falhar (bloqueado, Safari, etc), usa redirect
+  auth.signInWithPopup(provider).catch(e=>{
+    if(e.code==='auth/popup-blocked'||e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request'){
+      auth.signInWithRedirect(provider).catch(e2=>alert('Erro: '+e2.message));
+    } else {
+      alert('Erro: '+e.message);
+    }
+  });
 }
 function confirmLogout(){if(confirm('Sair da conta?'))auth.signOut();}
 
