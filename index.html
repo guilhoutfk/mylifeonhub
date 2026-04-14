@@ -337,12 +337,7 @@ const db=firebase.firestore();
 
 function loginGoogle(){
   const provider=new firebase.auth.GoogleAuthProvider();
-  const isMobile=/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  if(isMobile){
-    auth.signInWithRedirect(provider).catch(e=>alert('Erro: '+e.message));
-  } else {
-    auth.signInWithPopup(provider).catch(e=>alert('Erro: '+e.message));
-  }
+  auth.signInWithRedirect(provider).catch(e=>alert('Erro: '+e.message));
 }
 function confirmLogout(){if(confirm('Sair da conta?'))auth.signOut();}
 
