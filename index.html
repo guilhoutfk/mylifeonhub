@@ -147,6 +147,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .pdot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0}
 .plan-filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
 .table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+.table-wrap th:nth-child(2),.table-wrap td:nth-child(2){min-width:90px}
+.table-wrap th:nth-child(3),.table-wrap td:nth-child(3){min-width:90px}
 table{width:100%;border-collapse:collapse;font-size:12px;min-width:580px}
 thead tr{background:var(--surface2)}
 th{padding:9px 10px;text-align:left;font-weight:600;color:var(--text2);border-bottom:2px solid var(--border);white-space:nowrap}
@@ -183,7 +185,17 @@ td input:focus,td select:focus{border-color:var(--green)}
 .bn-icon{font-size:20px}
 .view{display:none}
 .view.active{display:block}
-.user-avatar{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.5);cursor:pointer;object-fit:cover}
+.user-avatar{width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,255,255,0.5);cursor:pointer;object-fit:cover}
+/* DROPDOWN MENU */
+.dropdown{position:relative;display:inline-block}
+.dropdown-menu{display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 4px 20px rgba(0,0,0,0.15);min-width:200px;z-index:400;overflow:hidden}
+.dropdown-menu.open{display:block}
+.dropdown-item{display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:13px;color:var(--text);cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:inherit}
+.dropdown-item:hover{background:var(--surface2)}
+.dropdown-item-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.dropdown-divider{height:1px;background:var(--border);margin:4px 0}
+/* PERFIL VIEW */
+#view-perfil{padding-bottom:0}
 </style>
 </head>
 <body>
@@ -219,8 +231,18 @@ td input:focus,td select:focus{border-color:var(--green)}
     </div>
     <div class="hdr-btns">
       <button class="btn btn-sm btn-ghost" onclick="openModal('task')">+ Tarefa</button>
-      <button class="btn btn-sm btn-ghost" onclick="openModal('config')">⚙️</button>
-      <img id="user-avatar" class="user-avatar" src="" style="display:none" onclick="confirmLogout()" title="Sair"/>
+      <div class="dropdown">
+        <button class="btn btn-sm btn-ghost" onclick="toggleDropdown(event)" id="config-btn">⚙️</button>
+        <div class="dropdown-menu" id="dropdown-menu">
+          <button class="dropdown-item" onclick="closeDropdown();openModal('config')"><span class="dropdown-item-icon">🎨</span> Gerenciar frentes</button>
+          <button class="dropdown-item" onclick="closeDropdown();setView('proj',document.querySelector('.bn[onclick*=proj]'))"><span class="dropdown-item-icon">📋</span> Gerenciar projetos</button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item" onclick="closeDropdown()"><span class="dropdown-item-icon">🌐</span> Idioma</button>
+          <button class="dropdown-item" onclick="closeDropdown()"><span class="dropdown-item-icon">⭐</span> Assinatura</button>
+        </div>
+      </div>
+      <img id="user-avatar" class="user-avatar" src="" style="display:none" onclick="openPerfil()" title="Meu perfil"/>
+      <button class="btn btn-sm btn-ghost" onclick="confirmLogout()" title="Sair" id="btn-sair" style="display:none">🚪</button>
     </div>
   </div>
 </div>
@@ -241,6 +263,7 @@ td input:focus,td select:focus{border-color:var(--green)}
     <div id="frentes-main"></div>
   </div>
   <div class="view" id="view-peso"><div id="corpo-full"></div></div>
+  <div class="view" id="view-perfil"><div id="perfil-content"></div></div>
   <div class="view" id="view-proj">
     <div id="proj-list-view">
       <div class="card-title-row" style="margin-bottom:10px">
@@ -348,6 +371,53 @@ function loginGoogle(){
   });
 }
 function confirmLogout(){if(confirm('Sair da conta?'))auth.signOut();}
+
+// ── DROPDOWN ──────────────────────────────────────────────
+function toggleDropdown(e){
+  e.stopPropagation();
+  document.getElementById('dropdown-menu').classList.toggle('open');
+}
+function closeDropdown(){
+  document.getElementById('dropdown-menu').classList.remove('open');
+}
+document.addEventListener('click',()=>closeDropdown());
+
+// ── PERFIL ────────────────────────────────────────────────
+function openPerfil(){
+  const user=auth.currentUser;
+  document.getElementById('perfil-content').innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;padding:14px;border-bottom:1px solid var(--border)">
+      <button class="btn btn-outline btn-sm" onclick="goBack()">← Voltar</button>
+      <div style="font-size:16px;font-weight:700">Meu perfil</div>
+    </div>
+    <div style="padding:24px;text-align:center">
+      ${user&&user.photoURL?`<img src="${user.photoURL}" style="width:80px;height:80px;border-radius:50%;border:3px solid var(--green);object-fit:cover;margin-bottom:12px"/>`:`<div style="width:80px;height:80px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 12px">👤</div>`}
+      <div style="font-size:18px;font-weight:700;margin-bottom:4px">${user?user.displayName||'—':'—'}</div>
+      <div style="font-size:13px;color:var(--text2)">${user?user.email||'—':'—'}</div>
+    </div>
+    <div class="card" style="margin:0 14px">
+      <div style="font-size:12px;color:var(--text2);line-height:1.6">
+        Conta vinculada via Google. Para alterar nome ou foto, acesse as configurações da sua conta Google.
+      </div>
+    </div>
+    <div style="padding:14px">
+      <button class="btn btn-outline" style="width:100%;margin-bottom:8px" onclick="exportBackup()">💾 Exportar backup dos dados</button>
+      <button class="btn" style="width:100%;background:#E24B4A;border-color:#E24B4A" onclick="confirmLogout()">🚪 Sair da conta</button>
+    </div>`;
+  // Mostra view perfil sem aparecer no menu inferior
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-perfil').classList.add('active');
+  activeView='perfil';
+}
+
+function goBack(){
+  // Volta para dashboard
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-dash').classList.add('active');
+  document.querySelectorAll('.bn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.bn[onclick*="dash"]').classList.add('active');
+  activeView='dash';
+}
 
 let currentUID=null;
 
@@ -566,6 +636,7 @@ async function initApp(user){
   document.getElementById('hdr-user').textContent=user.displayName||user.email;
   const av=document.getElementById('user-avatar');
   if(user.photoURL){av.src=user.photoURL;av.style.display='block';}
+  document.getElementById('btn-sair').style.display='block';
   document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
   document.getElementById('loading-screen').style.display='none';
   document.getElementById('app-root').style.display='block';
@@ -632,12 +703,12 @@ function taskVis(t){
 }
 
 // ── PESO ─────────────────────────────────────────────────
-function pesoStats(){const first=pesoLog.length?pesoLog[0].val:null;const last=pesoLog.length?pesoLog[pesoLog.length-1].val:null;const diff=(first!=null&&last!=null)?+(last-first).toFixed(1):null;const metaKg=parseFloat(metaPeso.kg)||10;const pct=diff!==null?Math.min(100,Math.max(0,Math.round(Math.abs(diff)/metaKg*100))):0;const diasRestantes=metaPeso.dataFim?daysFrom(metaPeso.dataFim):null;return{first,last,diff,pct,metaKg,diasRestantes};}
+function pesoStats(){const first=pesoLog.length?pesoLog[0].val:null;const last=pesoLog.length?pesoLog[pesoLog.length-1].val:null;const diff=(first!=null&&last!=null)?+(last-first).toFixed(1):null;const metaKg=parseFloat(metaPeso.kg)||0;const pct=metaKg&&diff!==null?Math.min(100,Math.max(0,Math.round(Math.abs(diff)/metaKg*100))):0;const diasRestantes=metaPeso.dataFim?daysFrom(metaPeso.dataFim):null;return{first,last,diff,pct,metaKg,diasRestantes};}
 function addPeso(id){const inp=document.getElementById(id);const v=parseFloat(inp.value);if(isNaN(v)||v<30||v>300){alert('Digite um peso válido');return;}const today=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});const idx=pesoLog.findIndex(p=>p.date===today);if(idx>=0)pesoLog[idx].val=v;else pesoLog.push({date:today,val:v});inp.value='';savePeso();renderPesoCard();if(activeView==='peso')renderCorpoFull();}
 function addGordura(id){const inp=document.getElementById(id);const v=parseFloat(inp.value);if(isNaN(v)||v<1||v>70){alert('% inválido');return;}const today=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});const idx=gorduraLog.findIndex(p=>p.date===today);if(idx>=0)gorduraLog[idx].val=v;else gorduraLog.push({date:today,val:v});inp.value='';saveGordura();renderCorpoFull();}
 function deletePeso(date){if(!confirm('Remover?'))return;pesoLog=pesoLog.filter(p=>p.date!==date);savePeso();renderPesoCard();if(activeView==='peso')renderCorpoFull();}
 function deleteGordura(date){if(!confirm('Remover?'))return;gorduraLog=gorduraLog.filter(p=>p.date!==date);saveGordura();renderCorpoFull();}
-function saveMeta2(){metaPeso.kg=parseFloat(document.getElementById('meta-kg').value)||10;metaPeso.dataFim=document.getElementById('meta-data').value||'';saveMeta();renderPesoCard();renderCorpoFull();}
+function saveMeta2(){metaPeso.kg=parseFloat(document.getElementById('meta-kg').value)||'';metaPeso.dataFim=document.getElementById('meta-data').value||'';saveMeta();renderPesoCard();renderCorpoFull();}
 function saveAlturaData(){corpoData.altura=(document.getElementById('inp-altura').value||'').replace(',','.');corpoData.sexo=document.getElementById('inp-sexo').value;saveCorpo();renderCorpoFull();}
 
 function renderPesoCard(){
@@ -666,7 +737,7 @@ function renderCorpoFull(){
   const gr=gorduraLog.slice().reverse().map((p,i,arr)=>{const prev=arr[i+1];let dt='—',dc='var(--text2)';if(prev){const d=+(p.val-prev.val).toFixed(1);dt=(d<=0?'▼ ':'▲ ')+Math.abs(d)+'%';dc=d<=0?'var(--green)':'#E24B4A';}const mk=last?+(last*(1-p.val/100)).toFixed(1):'—';return `<tr><td>${p.date}</td><td><strong>${p.val}%</strong></td><td style="color:${dc};font-weight:700">${dt}</td><td style="color:var(--green)">${mk} kg</td><td><button class="btn btn-outline btn-xs" onclick="deleteGordura('${p.date}')">🗑️</button></td></tr>`;}).join('');
   document.getElementById('corpo-full').innerHTML=`
     <div class="card"><div class="card-title">💪 Meu corpo</div><div class="chips"><span class="chip chip-b">Peso: ${last!=null?last+' kg':'—'}</span><span class="chip chip-o">${diff!==null?(diff<=0?'▼ Perda':'▲ Ganho')+': '+Math.abs(diff)+' kg':'—'}</span><span class="chip chip-g">Meta: −${metaKg} kg até ${mf}</span>${diasRestantes!==null?`<span class="chip ${diasRestantes<0?'chip-r':'chip-b'}">${diasRestantes>=0?diasRestantes+' dias restantes':'Prazo encerrado'}</span>`:''}</div>${pesoLog.length?`<div class="bar-wrap"><div class="bar-labels"><span>Início: ${first} kg</span><span>${pct}% da meta</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--green)"></div></div></div>`:''}</div>
-    <div class="card"><div class="card-title">✏️ Editar meta de peso</div><div class="grid3"><div class="field" style="margin:0"><label>Perda (kg)</label><input class="inp" type="number" id="meta-kg" value="${metaPeso.kg||10}" min="1" max="100" step="0.5" inputmode="decimal"/></div><div class="field" style="margin:0"><label>Prazo final</label><input class="inp" type="date" id="meta-data" value="${metaPeso.dataFim||''}"/></div><div style="display:flex;align-items:flex-end"><button class="btn" style="width:100%;padding:8px" onclick="saveMeta2()">Salvar</button></div></div></div>
+    <div class="card"><div class="card-title">✏️ Editar meta de peso</div><div class="grid3"><div class="field" style="margin:0"><label>Perda (kg)</label><input class="inp" type="number" id="meta-kg" value="${metaPeso.kg||''}" placeholder="Ex: 10" min="1" max="100" step="0.5" inputmode="decimal"/></div><div class="field" style="margin:0"><label>Prazo final</label><input class="inp" type="date" id="meta-data" value="${metaPeso.dataFim||''}"/></div><div style="display:flex;align-items:flex-end"><button class="btn" style="width:100%;padding:8px" onclick="saveMeta2()">Salvar</button></div></div></div>
     <div class="card"><div class="card-title">📐 Altura e sexo</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px"><div class="field" style="margin:0"><label>Altura (metros)</label><input class="inp" type="number" id="inp-altura" value="${corpoData.altura||''}" placeholder="Ex: 1.80" step="0.01" min="1" max="2.5" inputmode="decimal"/></div><div class="field" style="margin:0"><label>Sexo</label><select class="inp" id="inp-sexo"><option value="" ${!corpoData.sexo?'selected':''}>Não informado</option><option value="M" ${corpoData.sexo==='M'?'selected':''}>Masculino</option><option value="F" ${corpoData.sexo==='F'?'selected':''}>Feminino</option></select></div></div><button class="btn btn-sm btn-outline" onclick="saveAlturaData()">Salvar</button>${corpoData.altura?`<div style="font-size:13px;color:var(--text2);margin-top:8px">Altura: <strong>${ad}</strong>${corpoData.sexo?` · <strong>${corpoData.sexo==='M'?'Masculino':'Feminino'}</strong>`:''}</div>`:''}</div>
     <div class="card"><div class="card-title">📊 Métricas atuais</div><div class="grid2"><div class="stat-box"><div class="stat-val">${imc||'—'}</div><div class="stat-label">IMC</div><div class="stat-sub" style="color:${ii.color}">${ii.label}</div></div><div class="stat-box"><div class="stat-val">${lg!=null?lg+'%':'—'}</div><div class="stat-label">Gordura corporal</div><div class="stat-sub" style="color:${gi?gi.color:'var(--text2)'}">${gi?gi.label:(gKg!=null?gKg+' kg':'—')}</div></div><div class="stat-box"><div class="stat-val">${mmKg!=null?mmKg+' kg':'—'}</div><div class="stat-label">Massa magra</div><div class="stat-sub" style="color:var(--green)">${mmPct!=null?mmPct+'%':'auto'}</div></div><div class="stat-box"><div class="stat-val">${pct}%</div><div class="stat-label">Meta concluída</div><div class="stat-sub" style="color:var(--text2)">−${metaKg} kg</div></div></div>${imc?`<div class="imc-box" style="background:${ii.bg};margin-top:10px"><div class="imc-val" style="color:${ii.color}">${imc}</div><div class="imc-label" style="color:${ii.color}">${ii.label}</div><div class="imc-range">Saudável: 18,5–${corpoData.sexo==='M'?'25,0':'24,0'} · Altura: ${ad}</div></div>`:''}</div>
     <div class="card"><div class="card-title">⚖️ Registrar peso hoje</div><div class="row"><input class="inp" type="number" id="pinput2" placeholder="Peso (kg) ex: 92.5" step="0.1" min="30" max="300" inputmode="decimal"/><button class="btn" onclick="addPeso('pinput2')">Registrar</button></div>${pesoLog.length?`<div style="margin-top:12px"><div class="table-wrap"><table style="min-width:0"><thead><tr><th>Data</th><th>Peso</th><th>Variação</th><th>IMC</th><th></th></tr></thead><tbody>${pr}</tbody></table></div></div>`:'<div style="font-size:13px;color:var(--text2);margin-top:8px">Nenhum registro ainda.</div>'}</div>
@@ -1056,7 +1127,7 @@ function renderProjDetail(pid){
     <div class="card">
       <div class="card-title-row">
         <div class="card-title" style="margin:0">Tarefas do projeto</div>
-        <button class="btn btn-sm" onclick="openModal('task','${gid}')">+ Nova tarefa</button>
+        <button class="btn btn-sm" onclick="openModal('task','${gid}',null,'${pid}')">+ Nova tarefa</button>
       </div>
       ${tList.length?`<div>${taskRows}</div>`:`<div class="empty" style="padding:1rem">Nenhuma tarefa ainda.</div>`}
     </div>
@@ -1098,10 +1169,10 @@ function deleteProj(pid){
 
 // ── MODAL ─────────────────────────────────────────────────
 const CORES=['#1D9E75','#D85A30','#378ADD','#7F77DD','#D4537E','#BA7517','#639922','#085041','#E24B4A','#5DCAA5','#534AB7','#888780'];
-function openModal(mode,gid,tid){
+function openModal(mode,gid,tid,preProjetoId){
   editingTask=gid&&tid?{gid,tid,fid:gid}:null;
   const c=document.getElementById('modal-content');
-  if(mode==='task')renderTaskModal(c,gid,tid);
+  if(mode==='task')renderTaskModal(c,gid,tid,preProjetoId);
   if(mode==='config')renderConfigModal(c);
   if(mode==='projeto')renderProjetoModal(c,null);
   if(mode==='editprojeto')renderProjetoModal(c,gid);
@@ -1148,12 +1219,13 @@ function openEditTask(gid,tid){openModal('task',gid,tid);}
 function closeModal(){document.getElementById('modal').classList.remove('open');editingTask=null;editingGrupoId=null;}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
 
-function renderTaskModal(c,gid,tid){
+function renderTaskModal(c,gid,tid,preProjetoId){
   const ed=editingTask?((tasks[gid]||[]).find(t=>t.id===tid)||null):null;
   const rec=ed&&ed.recurrence?ed.recurrence:{active:false,period:'semanal',count:0};
   const selGid=ed?ed.grupoId:(gid&&gid!=='todas'?gid:'');
+  const selPid=ed?ed.projetoId:(preProjetoId||'');
   const gOpts=`<option value="">— Selecione a frente —</option>`+grupos.filter(g=>g.id!=='todas').map(g=>`<option value="${g.id}" ${selGid===g.id?'selected':''}>${g.icon} ${g.label}</option>`).join('');
-  const projOpts=projetos.filter(p=>p.grupoId===selGid||p.grupo===selGid).map(p=>`<option value="${p.id}" ${ed&&ed.projetoId===p.id?'selected':''}>${p.nome}</option>`).join('');
+  const projOpts=projetos.filter(p=>p.grupoId===selGid||p.grupo===selGid).map(p=>`<option value="${p.id}" ${selPid===p.id?'selected':''}>${p.nome}</option>`).join('');
   c.innerHTML=`<h3>${ed?'Editar tarefa':'Nova tarefa'}</h3>
     <div class="field"><label>Tarefa *</label><input id="m-text" value="${ed?ed.text||'':''}" placeholder="Descrição da tarefa"/></div>
     <div class="field"><label>Frente *</label><select id="m-grupo" onchange="updateProjetoOpts()">${gOpts}</select></div>
