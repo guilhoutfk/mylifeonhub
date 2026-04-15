@@ -232,11 +232,11 @@ td input:focus,td select:focus{border-color:var(--green)}
     <div class="tabs-wrap" id="tabs"></div>
     <div class="toolbar">
       <button class="fb" id="fb-hoje" onclick="setFilter('hoje',this)">Hoje</button>
-      <button class="fb" id="fb-late" onclick="setFilter('late',this)">Atrasadas</button>
       <button class="fb" id="fb-open" onclick="setFilter('open',this)">Em aberto</button>
+      <button class="fb" id="fb-late" onclick="setFilter('late',this)">Atrasadas</button>
       <button class="fb" id="fb-alta" onclick="setFilter('alta',this)">Urgentes</button>
       <button class="fb" id="fb-done" onclick="setFilter('done',this)">Concluídas</button>
-      <button class="sort-btn" id="sort-btn" onclick="toggleSort()">📅 Por data</button>
+      <button class="sort-btn" id="proj-btn" onclick="toggleViewMode()">📋 Projetos</button>
     </div>
     <div id="frentes-main"></div>
   </div>
@@ -274,7 +274,7 @@ td input:focus,td select:focus{border-color:var(--green)}
       <div class="table-wrap" style="margin-bottom:16px">
         <table>
           <thead><tr>
-            <th style="width:30px">✓</th><th>Frente</th><th>Subgrupo</th><th>Tarefa</th>
+            <th style="width:30px">✓</th><th>Frente</th><th>Projeto</th><th>Tarefa</th>
             <th style="width:110px">Prioridade</th><th style="width:120px">Vencimento</th>
             <th>Nota</th><th style="width:70px">Ações</th>
           </tr></thead>
@@ -286,7 +286,7 @@ td input:focus,td select:focus{border-color:var(--green)}
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th style="width:30px">✓</th><th>Frente</th><th>Subgrupo</th><th>Tarefa</th>
+            <th style="width:30px">✓</th><th>Frente</th><th>Projeto</th><th>Tarefa</th>
             <th style="width:110px">Prioridade</th><th style="width:120px">Vencimento</th>
             <th>Nota</th><th style="width:70px">Ações</th>
           </tr></thead>
@@ -441,14 +441,13 @@ const FRENTES_NOVOS=[
 ];
 
 // ── STATE ─────────────────────────────────────────────────
-let grupos=[],frentes=[],tasks={},projetos=[],pesoLog=[],gorduraLog=[],corpoData={altura:'',sexo:''},metaPeso={kg:'',dataFim:''};
-let activeGrupo='todas',activeFilter='none',sortByDate=false,activeView='dash';
-let editingTask=null,selectedColor='#1D9E75',editingFrenteId=null,editingGrupoId=null;
+let grupos=[],tasks={},projetos=[],pesoLog=[],gorduraLog=[],corpoData={altura:'',sexo:''},metaPeso={kg:'',dataFim:''};
+let activeGrupo='todas',activeFilter='none',activeView='dash';
+let editingTask=null,selectedColor='#1D9E75',editingGrupoId=null;
 let undoState=null,undoTimer=null;
 let activeProjetoId=null;
 
 const saveGrupos=()=>fbSet('grupos',grupos);
-const saveFrente=()=>fbSet('frentes',frentes);
 const saveTasks=()=>fbSet('tasks',tasks);
 const saveProjetos=()=>fbSet('projetos',projetos);
 const savePeso=()=>fbSet('peso',pesoLog);
@@ -456,6 +455,16 @@ const saveGordura=()=>fbSet('gordura',gorduraLog);
 const saveCorpo=()=>fbSet('corpo',corpoData);
 const saveMeta=()=>fbSet('meta',metaPeso);
 const uid=()=>Math.random().toString(36).slice(2,9);
+function getGrupoColor(gid){const g=grupos.find(g=>g.id===gid);return g?g.color:'#888';}
+function getGrupoById(gid){return grupos.find(g=>g.id===gid)||{label:'',color:'#888',icon:'',id:gid};}
+function getProjetoById(pid){return projetos.find(p=>p.id===pid)||null;}
+function allTasksFlat(){
+  const rows=[];
+  grupos.filter(g=>g.id!=='todas').forEach(g=>{
+    (tasks[g.id]||[]).forEach(t=>rows.push({...t,grupoId:g.id,gLabel:g.label,gColor:g.color,gIcon:g.icon}));
+  });
+  return rows;
+}
 
 // ── UTILS ─────────────────────────────────────────────────
 const todayD=new Date();todayD.setHours(0,0,0,0);
@@ -467,23 +476,43 @@ const pColors={alta:'#E24B4A',media:'#EF9F27',baixa:'#1D9E75'};
 const pLbl={alta:'Alta',media:'Média',baixa:'Baixa'};
 const pOrd={alta:0,media:1,baixa:2};
 const recPeriodLbl={diario:'Diário',semanal:'Semanal',quinzenal:'Quinzenal',mensal:'Mensal'};
-function getFrenteColor(fid){const f=frentes.find(f=>f.id===fid);if(!f)return'#888';const g=grupos.find(g=>g.id===f.grupo);return g?g.color:'#888';}
-function allTasksFlat(){const rows=[];frentes.forEach(f=>{const g=grupos.find(g=>g.id===f.grupo)||{label:f.grupo,color:'#888'};(tasks[f.id]||[]).forEach(t=>rows.push({...t,fid:f.id,ftitle:f.title,fgrupo:f.grupo,fgLabel:g.label,fColor:g.color}));});return rows;}
+
+
 
 // ── MIGRAÇÃO LEGADO ───────────────────────────────────────
 function getLegacy(key){
   const map={'grupos':'mv_grupos','frentes':'mv_frentes','tasks':'mv_tasks','peso':'mv_peso','gordura':'mv_gordura','corpo':'mv_corpo','meta':'mv_meta','grupo':'mv_grupo'};
   try{const v=localStorage.getItem(map[key])||localStorage.getItem('mv_'+key);return v?JSON.parse(v):null;}catch{return null;}
 }
-async function migrateFromLocalStorage(){
-  const snap=await db.collection('users').doc(currentUID).collection('data').doc('tasks').get().catch(()=>null);
-  if(snap&&snap.exists)return false;
-  const lt=getLegacy('tasks');
-  if(!lt||Object.keys(lt).length===0)return false;
-  for(const k of['grupos','frentes','tasks','peso','gordura','corpo','meta','grupo']){
-    const v=getLegacy(k);if(v!==null)await fbSet(k,v);
-  }
-  return true;
+// ── MIGRAÇÃO DO SISTEMA ANTIGO (subgrupos → projetos) ────
+async function migrateOldStructure(fbFrentes, fbTasks){
+  // Verifica se ainda está no formato antigo (tasks indexadas por frenteId)
+  if(!fbFrentes||fbFrentes.length===0)return fbTasks||{};
+  
+  const newTasks={};
+  // Inicializa tasks por grupo
+  grupos.filter(g=>g.id!=='todas').forEach(g=>newTasks[g.id]=[]);
+
+  fbFrentes.forEach(frente=>{
+    const grupoId=frente.grupo;
+    if(!grupoId||grupoId==='sem-frente'||grupoId==='todas')return;
+    const fTasks=fbTasks&&fbTasks[frente.id]?fbTasks[frente.id]:[];
+    // Verifica se esta frente corresponde a um projeto
+    const proj=projetos.find(p=>p.frenteId===frente.id);
+    fTasks.forEach(t=>{
+      const newTask={...t, grupoId};
+      if(proj)newTask.projetoId=proj.id;
+      if(!newTasks[grupoId])newTasks[grupoId]=[];
+      newTasks[grupoId].push(newTask);
+    });
+  });
+  // Migra tarefas órfãs (sem-subgrupo)
+  const orphans=fbTasks&&fbTasks['sem-subgrupo']?fbTasks['sem-subgrupo']:[];
+  orphans.forEach(t=>{
+    if(!newTasks['pessoal'])newTasks['pessoal']=[];
+    newTasks['pessoal'].push({...t,grupoId:'pessoal'});
+  });
+  return newTasks;
 }
 
 // ── AUTH ─────────────────────────────────────────────────
@@ -491,8 +520,6 @@ async function initApp(user){
   currentUID=user.uid;
   document.getElementById('login-screen').style.display='none';
   document.getElementById('loading-screen').style.display='flex';
-
-  const migrated=await migrateFromLocalStorage();
 
   grupos      = await fbGet('grupos')  || GRUPOS_DEF;
   const fbFrentes = await fbGet('frentes');
@@ -503,20 +530,38 @@ async function initApp(user){
   metaPeso    = await fbGet('meta')    || {kg:'', dataFim:''};
   activeGrupo = await fbGet('grupo')   || 'todas';
   projetos    = await fbGet('projetos')|| [];
+  const migrated2 = await fbGet('v2migrated');
 
-  const temTasks = fbTasks && Object.values(fbTasks).some(arr=>Array.isArray(arr)&&arr.length>0);
-  if(!temTasks){
-    frentes=FRENTES_NOVOS;
-    tasks={};FRENTES_NOVOS.forEach(f=>{tasks[f.id]=[];});
-    await saveFrente();await saveTasks();
-  } else {
-    frentes = fbFrentes && fbFrentes.length>0 ? fbFrentes : FRENTES_NOVOS;
-    tasks   = fbTasks;
-  }
-
+  // Garante grupos padrão
   let changed=false;
   GRUPOS_DEF.forEach(def=>{if(!grupos.find(g=>g.id===def.id)){grupos.push(def);changed=true;}});
   if(changed)saveGrupos();
+
+  // Verifica se precisa migrar do sistema antigo (subgrupos)
+  const isOldFormat = fbFrentes&&fbFrentes.length>0&&!migrated2;
+  if(isOldFormat){
+    // Migra automaticamente
+    tasks = await migrateOldStructure(fbFrentes, fbTasks);
+    // Atualiza projetos para novo formato (remove frenteId, usa grupoId)
+    projetos=projetos.map(p=>{
+      const frente=fbFrentes?fbFrentes.find(f=>f.id===p.frenteId):null;
+      return {...p, grupoId:p.grupo, frenteId:undefined};
+    });
+    await saveTasks();
+    await saveProjetos();
+    await fbSet('v2migrated',true);
+    await fbSet('frentes',[]); // limpa frentes antigas
+  } else if(!migrated2){
+    // Novo usuário — tasks já no novo formato por grupo
+    tasks={};
+    grupos.filter(g=>g.id!=='todas').forEach(g=>tasks[g.id]=[]);
+    await saveTasks();
+    await fbSet('v2migrated',true);
+  } else {
+    // Usuário já migrado
+    tasks=fbTasks||{};
+    grupos.filter(g=>g.id!=='todas').forEach(g=>{if(!tasks[g.id])tasks[g.id]=[];});
+  }
 
   document.getElementById('hdr-user').textContent=user.displayName||user.email;
   const av=document.getElementById('user-avatar');
@@ -524,8 +569,6 @@ async function initApp(user){
   document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
   document.getElementById('loading-screen').style.display='none';
   document.getElementById('app-root').style.display='block';
-
-  if(migrated)setTimeout(()=>alert('✅ Seus dados foram sincronizados com a nuvem!'),500);
   renderMetrics();renderPesoCard();renderTabs();renderDash();
 }
 
@@ -555,28 +598,22 @@ function renderMetrics(){
   });
   const emAberto=total-done;
   document.getElementById('metrics').innerHTML=`
-    <div class="mc" onclick="setFilterMc('hoje')"><div class="mc-val" style="color:var(--blue)">${hoje}</div><div class="mc-label">Hoje</div><div class="mc-sub" style="color:var(--blue-text)">${hoje>0?'Para hoje':'Em dia ✓'}</div></div>
-    <div class="mc" onclick="setFilterMc('late')"><div class="mc-val" style="color:${late>0?'#E24B4A':'var(--green)'}">${late}</div><div class="mc-label">Atrasadas</div><div class="mc-sub" style="color:${late>0?'#E24B4A':'var(--green)'}">${late>0?'Atenção!':'Em dia ✓'}</div></div>
+    <div class="mc" onclick="setFilterMc('hoje')"><div class="mc-val" style="color:var(--blue)">${hoje}</div><div class="mc-label">Hoje</div><div class="mc-sub" style="color:${hoje>0?'var(--blue)':'var(--green)'}">${hoje>0?'Para hoje':'Em dia ✓'}</div></div>
     <div class="mc" onclick="setFilterMc('open')"><div class="mc-val" style="color:var(--orange)">${emAberto}</div><div class="mc-label">Em aberto</div><div class="mc-sub" style="color:var(--text2)">${urgent} urgentes</div></div>
-    <div class="mc" onclick="setFilterMc('done')"><div class="mc-val" style="color:var(--green)">${done}</div><div class="mc-label">Feitas</div><div class="mc-sub" style="color:var(--green)">${total?Math.round(done/total*100):0}%</div></div>`;
+    <div class="mc" onclick="setFilterMc('late')"><div class="mc-val" style="color:${late>0?'#E24B4A':'var(--green)'}">${late}</div><div class="mc-label">Atrasadas</div><div class="mc-sub" style="color:${late>0?'#E24B4A':'var(--green)'}">${late>0?'Atenção!':'Em dia ✓'}</div></div>
+    <div class="mc" onclick="setFilterMc('done')"><div class="mc-val" style="color:var(--green)">${done}</div><div class="mc-label">Concluídas</div><div class="mc-sub" style="color:var(--green)">${total?Math.round(done/total*100):0}%</div></div>`;
 }
 
 function setFilterMc(f){
-  // KPI sempre vai para "Todas" + ativa "Por data"
   activeGrupo='todas';
-  sortByDate=true;
-  document.getElementById('sort-btn').classList.add('on');
-  // Atualiza tabs
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   const tabTodas=document.querySelector('.tab[onclick*="todas"]');
   if(tabTodas)tabTodas.classList.add('active');
-  // Aplica filtro
   document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on','on-red'));
   const ids={hoje:'fb-hoje',open:'fb-open',late:'fb-late',alta:'fb-alta',done:'fb-done'};
   const btn=document.getElementById(ids[f]);
   if(btn){if(f==='late')btn.classList.add('on-red');else btn.classList.add('on');}
   activeFilter=f;
-  // Garante que está na view dash
   if(activeView!=='dash'){
     const dashBtn=document.querySelector('.bn[onclick*="dash"]');
     if(dashBtn){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));document.getElementById('view-dash').classList.add('active');document.querySelectorAll('.bn').forEach(b=>b.classList.remove('active'));dashBtn.classList.add('active');activeView='dash';}
@@ -591,7 +628,7 @@ function taskVis(t){
   if(activeFilter==='done') return t.done;
   if(activeFilter==='alta') return !t.done&&t.p==='alta';
   if(activeFilter==='late') return !t.done&&d!==null&&d<0;
-  return true; // sem filtro ativo: mostra tudo
+  return !t.done; // padrão: em aberto
 }
 
 // ── PESO ─────────────────────────────────────────────────
@@ -637,25 +674,37 @@ function renderCorpoFull(){
 }
 
 // ── TABS ─────────────────────────────────────────────────
-function renderTabs(){const ga=grupos.filter(g=>{if(g.id==='todas')return true;return frentes.filter(f=>f.grupo===g.id).some(f=>(tasks[f.id]||[]).length>0);});document.getElementById('tabs').innerHTML=ga.map(g=>{const cnt=g.id==='todas'?allTasksFlat().filter(t=>!t.done).length:frentes.filter(f=>f.grupo===g.id).reduce((a,f)=>a+(tasks[f.id]||[]).filter(t=>!t.done).length,0);return `<button class="tab ${g.id===activeGrupo?'active':''}" onclick="setTab('${g.id}')">${g.icon} ${g.label}${cnt>0?`<span class="tab-cnt">${cnt}</span>`:''}</button>`;}).join('');}
+function renderTabs(){
+  const ga=grupos.filter(g=>{
+    if(g.id==='todas')return true;
+    return(tasks[g.id]||[]).length>0;
+  });
+  document.getElementById('tabs').innerHTML=ga.map(g=>{
+    const cnt=g.id==='todas'?allTasksFlat().filter(t=>!t.done).length:(tasks[g.id]||[]).filter(t=>!t.done).length;
+    return `<button class="tab ${g.id===activeGrupo?'active':''}" onclick="setTab('${g.id}')">${g.icon} ${g.label}${cnt>0?`<span class="tab-cnt">${cnt}</span>`:''}</button>`;
+  }).join('');
+}
 
 function setTab(gid){
   activeGrupo=gid;
   activeFilter='none';
-  // Desativa "Por data" ao trocar de frente
-  sortByDate=false;
-  document.getElementById('sort-btn').classList.remove('on');
   document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on','on-red'));
   fbSet('grupo',gid);renderTabs();renderDash();
 }
 
 function setFilter(f,btn){
   activeFilter=f;
+  activeViewMode='lista';
+  document.getElementById('proj-btn').classList.remove('on');
   document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on','on-red'));
   if(f==='late')btn.classList.add('on-red');else btn.classList.add('on');
   renderDash();
 }
-function toggleSort(){sortByDate=!sortByDate;document.getElementById('sort-btn').classList.toggle('on',sortByDate);renderDash();}
+function toggleViewMode(){
+  activeViewMode=activeViewMode==='projetos'?'lista':'projetos';
+  document.getElementById('proj-btn').classList.toggle('on',activeViewMode==='projetos');
+  renderDash();
+}
 
 function nextRecDate(due,period){const d=parseLocalDate(due);if(period==='diario')d.setDate(d.getDate()+1);else if(period==='semanal')d.setDate(d.getDate()+7);else if(period==='quinzenal')d.setDate(d.getDate()+15);else if(period==='mensal')d.setMonth(d.getMonth()+1);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function showUndoToast(txt,isRec){
@@ -671,49 +720,39 @@ function showUndoToast(txt,isRec){
 function dismissToast(){document.getElementById('undo-toast').classList.remove('show');undoState=null;if(undoTimer)clearTimeout(undoTimer);}
 function undoRecurrence(){
   if(!undoState)return;
-  const t=(tasks[undoState.fid]||[]).find(t=>t.id===undoState.tid);
+  const gid=undoState.gid||undoState.fid;
+  const t=(tasks[gid]||[]).find(t=>t.id===undoState.tid);
   if(!t)return;
   if(undoState.type==='recurrence'){
     t.due=undoState.prevDue;
     t.recurrence.count=undoState.prevCount;
     t.recurrence.history=undoState.prevHistory;
-  } else {
-    // Tarefa normal — volta para pendente
-    t.done=false;
-  }
+  }else{t.done=false;}
   undoState=null;dismissToast();
   saveTasks();renderMetrics();renderTabs();renderDash();
   if(activeProjetoId)renderProjDetail(activeProjetoId);
 }
 
 // ── DASH ─────────────────────────────────────────────────
-function toggleTask(fid,tid){
-  const t=(tasks[fid]||[]).find(t=>t.id===tid);if(!t)return;
-
+function toggleTask(gid,tid){
+  const t=(tasks[gid]||[]).find(t=>t.id===tid);if(!t)return;
   if(!t.done&&t.recurrence&&t.recurrence.active){
-    // Tarefa recorrente: avança data
-    undoState={type:'recurrence',fid,tid,prevDue:t.due,prevCount:t.recurrence.count||0,prevHistory:[...(t.recurrence.history||[])]};
+    undoState={type:'recurrence',gid,tid,prevDue:t.due,prevCount:t.recurrence.count||0,prevHistory:[...(t.recurrence.history||[])]};
     if(!t.recurrence.history)t.recurrence.history=[];
     t.recurrence.history.push(new Date().toISOString().split('T')[0]);
     t.recurrence.count=(t.recurrence.count||0)+1;
     t.due=nextRecDate(t.due,t.recurrence.period);
-    t.done=false;
-    showUndoToast(t.text,true);
+    t.done=false;showUndoToast(t.text,true);
   } else if(!t.done){
-    // Tarefa normal sendo concluída: salva estado para desfazer
-    undoState={type:'done',fid,tid};
-    t.done=true;
-    showUndoToast(t.text,false);
+    undoState={type:'done',gid,tid};
+    t.done=true;showUndoToast(t.text,false);
   } else {
-    // Desmarcando tarefa já concluída: sem toast
-    t.done=false;
-    dismissToast();
+    t.done=false;dismissToast();
   }
   saveTasks();renderMetrics();renderTabs();renderDash();
 }
-function toggleFrente(fid){const f=frentes.find(f=>f.id===fid);if(!f)return;f.open=!f.open;saveFrente();renderDash();}
 
-function taskRowHtml(fid,t,showGrupo){
+function taskRowHtml(gid,t,showGrupo){
   const d=daysFrom(t.due);let dcls='dbadge',dtxt='';
   if(t.due&&!t.done){
     dtxt=fmtDate(t.due);
@@ -721,25 +760,25 @@ function taskRowHtml(fid,t,showGrupo){
     else if(d===0){dcls+=' soon';dtxt='Hoje';}
     else if(d===1){dcls+=' soon';dtxt='Amanhã';}
     else if(d<=7)dcls+=' soon';
-  }else if(t.due&&t.done){
-    dtxt=fmtDate(t.due);
-  }
-  const color=getFrenteColor(fid);const fr=frentes.find(f=>f.id===fid);const isOrphan=fid==='sem-subgrupo';
+  }else if(t.due&&t.done){dtxt=fmtDate(t.due);}
+  const g=getGrupoById(gid);
+  const proj=t.projetoId?getProjetoById(t.projetoId):null;
   return `<div class="task"
-    onclick="toggleTask('${fid}','${t.id}')"
-    oncontextmenu="event.preventDefault();openEditTask('${fid}','${t.id}')"
-    ontouchstart="startLongPress('${fid}','${t.id}',event)"
+    onclick="toggleTask('${gid}','${t.id}')"
+    oncontextmenu="event.preventDefault();openEditTask('${gid}','${t.id}')"
+    ontouchstart="startLongPress('${gid}','${t.id}',event)"
     ontouchend="cancelLongPress()"
     ontouchmove="cancelLongPress()"
-  ><div class="tcheck ${t.done?'dn':''}"></div><div class="tbody"><div class="ttext ${t.done?'dn':''}">${t.text}</div>${t.note?`<div class="tnote">${t.note}</div>`:''}<div class="tmeta"><span class="pdot" style="background:${pColors[t.p]||'#888'}"></span>${dtxt?`<span class="${t.done?'dbadge':dcls}">${dtxt}</span>`:''} ${t.recurrence&&t.recurrence.active?`<span class="rec-badge">↻ ${recPeriodLbl[t.recurrence.period]||t.recurrence.period}${t.recurrence.count?` · ${t.recurrence.count}×`:''}</span>`:''} ${isOrphan?`<span style="font-size:10px;background:#FAEEDA;color:#854F0B;padding:2px 7px;border-radius:6px;font-weight:600">⚠️ Sem subgrupo</span>`:''} ${showGrupo&&fr&&!isOrphan?`<span style="font-size:10px;color:${color};font-weight:600">${fr.title}</span>`:''}</div></div></div>`;
+  ><div class="tcheck ${t.done?'dn':''}"></div><div class="tbody"><div class="ttext ${t.done?'dn':''}">${t.text}</div>${t.note?`<div class="tnote">${t.note}</div>`:''}<div class="tmeta"><span class="pdot" style="background:${pColors[t.p]||'#888'}"></span>${dtxt?`<span class="${t.done?'dbadge':dcls}">${dtxt}</span>`:''} ${t.recurrence&&t.recurrence.active?`<span class="rec-badge">↻ ${recPeriodLbl[t.recurrence.period]||t.recurrence.period}${t.recurrence.count?` · ${t.recurrence.count}×`:''}</span>`:''} ${showGrupo?`<span style="font-size:10px;color:${g.color};font-weight:600">${g.icon} ${g.label}</span>`:''}${proj?`<span style="font-size:10px;color:var(--text2);font-weight:500"> · ${proj.nome}</span>`:''}
+  </div></div></div>`;
 }
 
 // Long press para celular
 let longPressTimer=null;
-function startLongPress(fid,tid,event){
+function startLongPress(gid,tid,event){
   longPressTimer=setTimeout(()=>{
     event.preventDefault();
-    openEditTask(fid,tid);
+    openEditTask(gid,tid);
   },600);
 }
 function cancelLongPress(){
@@ -783,56 +822,89 @@ function sortTasksByDate(arr){
   });
 }
 
+let activeViewMode='lista'; // 'lista' ou 'projetos'
+
+function sortTasksByDate(arr){
+  return[...arr].sort((a,b)=>{
+    if(a.done&&!b.done)return 1;
+    if(!a.done&&b.done)return-1;
+    if(!a.due&&!b.due)return pOrd[a.p]-pOrd[b.p];
+    if(!a.due)return 1;
+    if(!b.due)return-1;
+    const dd=parseLocalDate(a.due)-parseLocalDate(b.due);
+    return dd!==0?dd:pOrd[a.p]-pOrd[b.p];
+  });
+}
+
 function renderDash(){
   const el=document.getElementById('frentes-main');
   const isTodas=activeGrupo==='todas';
 
-  // Modo lista flat por data — para qualquer frente selecionada
-  if(sortByDate){
+  if(activeViewMode==='projetos'){
+    // Modo projetos — agrupado por projeto
     let ts=allTasksFlat();
-    if(!isTodas)ts=ts.filter(t=>frentes.find(f=>f.id===t.fid&&f.grupo===activeGrupo));
+    if(!isTodas)ts=ts.filter(t=>t.grupoId===activeGrupo);
     ts=ts.filter(t=>taskVis(t));
-    ts=sortTasksByDate(ts);
-    if(!ts.length){el.innerHTML=`<div class="empty">Nenhuma tarefa com este filtro.</div>`;return;}
-    el.innerHTML=`<div class="frente"><div class="tasks op">${ts.map(t=>taskRowHtml(t.fid,t,true)).join('')}</div></div>`;
+    const projAtivos=projetos.filter(p=>isTodas||(p.grupoId===activeGrupo||p.grupo===activeGrupo));
+    const projOrdenados=[...projAtivos].sort((a,b)=>{
+      const gid=a.grupoId||a.grupo;
+      const gid2=b.grupoId||b.grupo;
+      const ptA=(tasks[gid]||[]).filter(t=>t.projetoId===a.id);
+      const ptB=(tasks[gid2]||[]).filter(t=>t.projetoId===b.id);
+      const pctA=ptA.length?Math.round(ptA.filter(t=>t.done).length/ptA.length*100):0;
+      const pctB=ptB.length?Math.round(ptB.filter(t=>t.done).length/ptB.length*100):0;
+      if(pctA===100&&pctB!==100)return 1;
+      if(pctA!==100&&pctB===100)return-1;
+      return a.nome.localeCompare(b.nome,'pt');
+    });
+    let html='';
+    projOrdenados.forEach(p=>{
+      const gid=p.grupoId||p.grupo;
+      const g=getGrupoById(gid);
+      const pt=ts.filter(t=>t.projetoId===p.id);
+      if(!pt.length)return;
+      const dn=pt.filter(t=>t.done).length;
+      const pct=Math.round(dn/pt.length*100);
+      html+=`<div class="frente"><div class="fh" onclick="this.parentElement.querySelector('.tasks').classList.toggle('op');this.querySelector('.chev').classList.toggle('op')"><div class="fdot" style="background:${g.color}"></div><div style="flex:1;min-width:0"><div class="ftitle">${p.nome}</div>${isTodas?`<div class="fsubtitle">${g.icon} ${g.label}</div>`:''}</div><span class="fpct">${pct}% · ${dn}/${pt.length}</span><span class="chev op">▶</span></div><div class="pbar-wrap"><div class="pbar" style="width:${pct}%;background:${g.color}"></div></div><div class="tasks op">${sortTasksByDate(pt).map(t=>taskRowHtml(t.grupoId,t,isTodas)).join('')}</div></div>`;
+    });
+    const semProjeto=ts.filter(t=>!t.projetoId);
+    if(semProjeto.length){
+      html+=`<div class="frente"><div class="fh" onclick="this.parentElement.querySelector('.tasks').classList.toggle('op');this.querySelector('.chev').classList.toggle('op')"><div class="fdot" style="background:#888"></div><div style="flex:1"><div class="ftitle">Sem projeto</div></div><span class="fpct">${semProjeto.length}</span><span class="chev op">▶</span></div><div class="pbar-wrap"></div><div class="tasks op">${sortTasksByDate(semProjeto).map(t=>taskRowHtml(t.grupoId,t,isTodas)).join('')}</div></div>`;
+    }
+    el.innerHTML=html||`<div class="empty">Nenhuma tarefa com este filtro.</div>`;
     return;
   }
 
-  // Modo normal — agrupado por subgrupo, ordem alfabética
-  let fs=isTodas?frentes:frentes.filter(f=>f.grupo===activeGrupo);
-  fs=fs.filter(f=>(tasks[f.id]||[]).some(t=>taskVis(t)));
-  // Ordem alfabética dos subgrupos
-  fs=[...fs].sort((a,b)=>a.title.localeCompare(b.title,'pt'));
-  if(!fs.length){el.innerHTML=`<div class="empty">Nenhuma tarefa com este filtro.</div>`;return;}
-  el.innerHTML=fs.map(f=>{
-    const g=grupos.find(g=>g.id===f.grupo)||{label:'',color:'#888'};
-    const c=g.color;
-    const vt=(tasks[f.id]||[]).filter(t=>taskVis(t));
-    const tot=(tasks[f.id]||[]).length;
-    const dn=(tasks[f.id]||[]).filter(t=>t.done).length;
-    const pct=tot?Math.round(dn/tot*100):0;
-    return `<div class="frente"><div class="fh" onclick="toggleFrente('${f.id}')"><div class="fdot" style="background:${c}"></div><div style="flex:1;min-width:0"><div class="ftitle">${f.title}</div>${isTodas?`<div class="fsubtitle">${g.label}</div>`:''}</div><span class="fpct">${pct}% · ${dn}/${tot}</span><span class="chev ${f.open?'op':''}">▶</span></div><div class="pbar-wrap"><div class="pbar" style="width:${pct}%;background:${c}"></div></div><div class="tasks ${f.open?'op':''}">${vt.map(t=>taskRowHtml(f.id,t,false)).join('')}</div></div>`;
-  }).join('');
+  // Modo padrão — lista flat por data (sempre)
+  let ts=allTasksFlat();
+  if(!isTodas)ts=ts.filter(t=>t.grupoId===activeGrupo);
+  ts=ts.filter(t=>taskVis(t));
+  ts=sortTasksByDate(ts);
+  if(!ts.length){el.innerHTML=`<div class="empty">Nenhuma tarefa com este filtro.</div>`;return;}
+  el.innerHTML=`<div class="frente"><div class="tasks op">${ts.map(t=>taskRowHtml(t.grupoId,t,isTodas)).join('')}</div></div>`;
 }
 
 // ── PLANILHA ─────────────────────────────────────────────
-function renderPlanFiltros(){const ga=grupos.filter(g=>g.id!=='todas'&&frentes.some(f=>f.grupo===g.id&&(tasks[f.id]||[]).length>0));const temO=(tasks['sem-subgrupo']||[]).length>0;document.getElementById('plan-fg').innerHTML='<option value="">Todas as frentes</option>'+ga.map(g=>`<optgroup label="${g.label}">${frentes.filter(f=>f.grupo===g.id).map(f=>`<option value="${f.id}">${f.title}</option>`).join('')}</optgroup>`).join('')+(temO?'<option value="sem-subgrupo">⚠️ Sem categoria</option>':'');}
+function renderPlanFiltros(){
+  const ga=grupos.filter(g=>g.id!=='todas'&&(tasks[g.id]||[]).length>0);
+  document.getElementById('plan-fg').innerHTML='<option value="">Todas as frentes</option>'+ga.map(g=>`<option value="${g.id}">${g.icon} ${g.label}</option>`).join('');
+}
 
 function renderPlan(){
-  const fid=document.getElementById('plan-fg').value;
+  const gid=document.getElementById('plan-fg').value;
   const sort=document.getElementById('plan-sort').value;
   const semData=document.getElementById('plan-semdata').checked;
   let rows=allTasksFlat();
-  if(fid)rows=rows.filter(r=>r.fid===fid);
+  if(gid)rows=rows.filter(r=>r.grupoId===gid);
   if(semData)rows=rows.filter(r=>!r.due);
   rows=[...rows].sort((a,b)=>{
     if(sort==='due'){
-      if(!a.due&&!b.due)return(a.fgLabel+a.ftitle).localeCompare(b.fgLabel+b.ftitle);
-      if(!a.due)return 1;if(!b.due)return -1;
+      if(!a.due&&!b.due)return a.gLabel.localeCompare(b.gLabel,'pt');
+      if(!a.due)return 1;if(!b.due)return-1;
       const dd=parseLocalDate(a.due)-parseLocalDate(b.due);
       return dd!==0?dd:pOrd[a.p]-pOrd[b.p];
     }
-    const fg=(a.fgLabel+a.ftitle).localeCompare(b.fgLabel+b.ftitle);
+    const fg=a.gLabel.localeCompare(b.gLabel,'pt');
     return fg!==0?fg:pOrd[a.p]-pOrd[b.p];
   });
 
@@ -844,21 +916,22 @@ function renderPlan(){
     let ds='';
     if(t.due&&!isDone&&d<0)ds='color:var(--red-text);font-weight:700';
     else if(t.due&&!isDone&&d!==null&&d<=3)ds='color:var(--orange-text);font-weight:700';
-    const c=t.fColor||'#888',isO=t.fid==='sem-subgrupo';
-    const sOpts=frentes.filter(f=>f.id!=='sem-subgrupo').map(f=>{const g=grupos.find(g=>g.id===f.grupo)||{label:''};return `<option value="${f.id}" ${t.fid===f.id?'selected':''}>${g.label} — ${f.title}</option>`;}).join('');
-    const subCell=isO?`<select onchange="planMoveTask('${t.fid}','${t.id}',this.value)" style="width:100%;min-width:110px;font-size:11px;border-color:#BA7517"><option value="">⚠️ Sem categoria</option>${sOpts}</select>`:`<span class="tag" style="background:${c}22;color:${c}">${t.ftitle}</span>`;
-    return `<tr ${isO?'style="background:#FAEEDA18"':''}${isDone?'style="opacity:0.65"':''}><td style="text-align:center"><input type="checkbox" ${isDone?'checked':''} onchange="planToggle('${t.fid}','${t.id}',this.checked)" style="width:15px;height:15px;cursor:pointer"/></td><td><span class="tag" style="background:${c}22;color:${c}">${isO?'⚠️':t.fgLabel}</span></td><td>${subCell}</td><td><input type="text" value="${(t.text||'').replace(/"/g,'&quot;')}" onblur="planEdit('${t.fid}','${t.id}','text',this.value)" style="min-width:130px;${isDone?'text-decoration:line-through;color:var(--text3)':''}"/></td><td><select onchange="planEdit('${t.fid}','${t.id}','p',this.value)" style="width:100%"><option value="alta" ${t.p==='alta'?'selected':''}>🔴 Alta</option><option value="media" ${t.p==='media'?'selected':''}>🟡 Média</option><option value="baixa" ${t.p==='baixa'?'selected':''}>🟢 Baixa</option></select></td><td style="${ds}"><input type="date" value="${t.due||''}" onchange="planEdit('${t.fid}','${t.id}','due',this.value)"/></td><td><input type="text" value="${(t.note||'').replace(/"/g,'&quot;')}" placeholder="—" onblur="planEdit('${t.fid}','${t.id}','note',this.value)" style="min-width:80px"/></td><td><div class="action-btns"><button class="btn btn-outline btn-xs" onclick="openEditTask('${t.fid}','${t.id}')">✏️</button><button class="btn btn-outline btn-xs" onclick="deleteTask('${t.fid}','${t.id}')">🗑️</button></div></td></tr>`;
+    const c=t.gColor||'#888';
+    const projOpts=projetos.filter(p=>p.grupoId===t.grupoId||p.grupo===t.grupoId).map(p=>`<option value="${p.id}" ${t.projetoId===p.id?'selected':''}>${p.nome}</option>`).join('');
+    const gOpts=grupos.filter(g=>g.id!=='todas').map(g=>`<option value="${g.id}" ${t.grupoId===g.id?'selected':''}>${g.icon} ${g.label}</option>`).join('');
+    return `<tr ${isDone?'style="opacity:0.65"':''}><td style="text-align:center"><input type="checkbox" ${isDone?'checked':''} onchange="planToggle('${t.grupoId}','${t.id}',this.checked)" style="width:15px;height:15px;cursor:pointer"/></td><td><select onchange="planMoveTask('${t.grupoId}','${t.id}',this.value)" style="font-size:11px;width:100%">${gOpts}</select></td><td><select onchange="planSetProjeto('${t.grupoId}','${t.id}',this.value)" style="font-size:11px;width:100%"><option value="">— Sem projeto —</option>${projOpts}</select></td><td><input type="text" value="${(t.text||'').replace(/"/g,'&quot;')}" onblur="planEdit('${t.grupoId}','${t.id}','text',this.value)" style="min-width:130px;${isDone?'text-decoration:line-through;color:var(--text3)':''}"/></td><td><select onchange="planEdit('${t.grupoId}','${t.id}','p',this.value)" style="width:100%"><option value="alta" ${t.p==='alta'?'selected':''}>🔴 Alta</option><option value="media" ${t.p==='media'?'selected':''}>🟡 Média</option><option value="baixa" ${t.p==='baixa'?'selected':''}>🟢 Baixa</option></select></td><td style="${ds}"><input type="date" value="${t.due||''}" onchange="planEdit('${t.grupoId}','${t.id}','due',this.value)"/></td><td><input type="text" value="${(t.note||'').replace(/"/g,'&quot;')}" placeholder="—" onblur="planEdit('${t.grupoId}','${t.id}','note',this.value)" style="min-width:80px"/></td><td><div class="action-btns"><button class="btn btn-outline btn-xs" onclick="openEditTask('${t.grupoId}','${t.id}')">✏️</button><button class="btn btn-outline btn-xs" onclick="deleteTask('${t.grupoId}','${t.id}')">🗑️</button></div></td></tr>`;
   };
 
   document.getElementById('plan-body-open').innerHTML=openRows.length?openRows.map(t=>rowHtml(t,false)).join(''):`<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:16px;font-size:12px">Nenhuma tarefa em aberto</td></tr>`;
   document.getElementById('plan-body-done').innerHTML=doneRows.length?doneRows.map(t=>rowHtml(t,true)).join(''):`<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:16px;font-size:12px">Nenhuma tarefa concluída</td></tr>`;
 }
-function planToggle(fid,tid,checked){const t=(tasks[fid]||[]).find(t=>t.id===tid);if(t)t.done=checked;saveTasks();renderMetrics();renderTabs();renderDash();renderPlan();}
-function planEdit(fid,tid,field,val){const t=(tasks[fid]||[]).find(t=>t.id===tid);if(t)t[field]=val;saveTasks();renderMetrics();renderTabs();renderDash();}
-function planMoveTask(oldFid,tid,newFid){if(!newFid||oldFid===newFid)return;const ol=tasks[oldFid]||[];const t=ol.find(t=>t.id===tid);if(!t)return;tasks[oldFid]=ol.filter(t=>t.id!==tid);if(!tasks[newFid])tasks[newFid]=[];tasks[newFid].push(t);saveTasks();renderMetrics();renderTabs();renderDash();renderPlan();}
-function deleteTask(fid,tid){
+function planToggle(gid,tid,checked){const t=(tasks[gid]||[]).find(t=>t.id===tid);if(t)t.done=checked;saveTasks();renderMetrics();renderTabs();renderDash();renderPlan();}
+function planEdit(gid,tid,field,val){const t=(tasks[gid]||[]).find(t=>t.id===tid);if(t)t[field]=val;saveTasks();renderMetrics();renderTabs();renderDash();}
+function planSetProjeto(gid,tid,pid){const t=(tasks[gid]||[]).find(t=>t.id===tid);if(t){t.projetoId=pid||undefined;}saveTasks();renderDash();renderPlan();}
+function planMoveTask(oldGid,tid,newGid){if(!newGid||oldGid===newGid)return;const ol=tasks[oldGid]||[];const t=ol.find(t=>t.id===tid);if(!t)return;tasks[oldGid]=ol.filter(t=>t.id!==tid);if(!tasks[newGid])tasks[newGid]=[];t.grupoId=newGid;delete t.projetoId;tasks[newGid].push(t);saveTasks();renderMetrics();renderTabs();renderDash();renderPlan();}
+function deleteTask(gid,tid){
   if(!confirm('Excluir esta tarefa?'))return;
-  tasks[fid]=(tasks[fid]||[]).filter(t=>t.id!==tid);
+  tasks[gid]=(tasks[gid]||[]).filter(t=>t.id!==tid);
   saveTasks();renderMetrics();renderTabs();renderDash();
   if(activeView==='plan')renderPlan();
   if(activeProjetoId)renderProjDetail(activeProjetoId);
@@ -885,18 +958,28 @@ function renderProjList(){
     el.innerHTML=`<div class="empty">Nenhum projeto criado ainda.<br>Clique em "+ Novo projeto" para começar.</div>`;
     return;
   }
-  el.innerHTML=projetos.map(p=>{
-    const g=grupos.find(g=>g.id===p.grupo)||{label:'',color:'#888',icon:'📋'};
-    const color=g.color;
-    const fid=p.frenteId; // subgrupo criado automaticamente
-    const tList=tasks[fid]||[];
+  // Ordena: incompletos primeiro (alfa), completos no final (alfa)
+  const sorted=[...projetos].sort((a,b)=>{
+    const gidA=a.grupoId||a.grupo;const gidB=b.grupoId||b.grupo;
+    const tA=allTasksFlat().filter(t=>t.projetoId===a.id);
+    const tB=allTasksFlat().filter(t=>t.projetoId===b.id);
+    const pctA=tA.length?Math.round(tA.filter(t=>t.done).length/tA.length*100):0;
+    const pctB=tB.length?Math.round(tB.filter(t=>t.done).length/tB.length*100):0;
+    if(pctA===100&&pctB!==100)return 1;
+    if(pctA!==100&&pctB===100)return-1;
+    return a.nome.localeCompare(b.nome,'pt');
+  });
+  el.innerHTML=sorted.map(p=>{
+    const gid=p.grupoId||p.grupo;
+    const g=getGrupoById(gid);
+    const tList=allTasksFlat().filter(t=>t.projetoId===p.id);
     const tot=tList.length;
     const dn=tList.filter(t=>t.done).length;
     const pct=tot?Math.round(dn/tot*100):0;
     const dias=p.dataFim?daysFrom(p.dataFim):null;
     return `<div class="frente" onclick="showProjDetail('${p.id}')">
       <div class="fh">
-        <div class="fdot" style="background:${color}"></div>
+        <div class="fdot" style="background:${g.color}"></div>
         <div style="flex:1;min-width:0">
           <div class="ftitle">${p.nome}</div>
           <div class="fsubtitle">${g.icon} ${g.label}${p.dataFim?` · ${fmtDateBR(p.dataFim)}`:''}${dias!==null?` · ${dias>=0?dias+' dias restantes':'Prazo encerrado'}`:''}${p.descricao?` · ${p.descricao}`:''}</div>
@@ -904,37 +987,29 @@ function renderProjList(){
         <span class="fpct">${pct}% · ${dn}/${tot}</span>
         <span style="font-size:12px;color:var(--text3)">▶</span>
       </div>
-      <div class="pbar-wrap"><div class="pbar" style="width:${pct}%;background:${color}"></div></div>
+      <div class="pbar-wrap"><div class="pbar" style="width:${pct}%;background:${g.color}"></div></div>
     </div>`;
   }).join('');
 }
 
 function renderProjDetail(pid){
-  const p=projetos.find(p=>p.id===pid);
-  if(!p)return;
-  const g=grupos.find(g=>g.id===p.grupo)||{label:'',color:'#888',icon:'📋'};
-  const color=g.color;
-  const fid=p.frenteId;
-  const tList=tasks[fid]||[];
+  const p=projetos.find(p=>p.id===pid);if(!p)return;
+  const gid=p.grupoId||p.grupo;
+  const g=getGrupoById(gid);
+  const tList=allTasksFlat().filter(t=>t.projetoId===pid);
   const tot=tList.length;
   const dn=tList.filter(t=>t.done).length;
   const pct=tot?Math.round(dn/tot*100):0;
   const dias=p.dataFim?daysFrom(p.dataFim):null;
 
-  // Tarefas do projeto — ordenadas por vencimento (sem data no final, concluídas no final)
-  const tListSorted=[...tList].sort((a,b)=>{
-    if(a.done&&!b.done)return 1;if(!a.done&&b.done)return -1;
-    if(!a.due&&!b.due)return pOrd[a.p]-pOrd[b.p];
-    if(!a.due)return 1;if(!b.due)return -1;
-    return parseLocalDate(a.due)-parseLocalDate(b.due);
-  });
+  const tListSorted=sortTasksByDate(tList);
   const taskRows=tListSorted.map(t=>{
     const d=daysFrom(t.due);let dcls='dbadge',dtxt='';
     if(t.due&&!t.done){dtxt=fmtDate(t.due);if(d<0){dcls+=' late';dtxt='Atrasada';}else if(d===0){dcls+=' soon';dtxt='Hoje';}else if(d===1){dcls+=' soon';dtxt='Amanhã';}else if(d<=7)dcls+=' soon';}
     return `<div class="task"
-      onclick="toggleProjTask('${fid}','${t.id}')"
-      oncontextmenu="event.preventDefault();openEditTask('${fid}','${t.id}')"
-      ontouchstart="startLongPress('${fid}','${t.id}',event)"
+      onclick="toggleTask('${t.grupoId}','${t.id}')"
+      oncontextmenu="event.preventDefault();openEditTask('${t.grupoId}','${t.id}')"
+      ontouchstart="startLongPress('${t.grupoId}','${t.id}',event)"
       ontouchend="cancelLongPress()"
       ontouchmove="cancelLongPress()">
       <div class="tcheck ${t.done?'dn':''}"></div>
@@ -947,19 +1022,18 @@ function renderProjDetail(pid){
           ${t.recurrence&&t.recurrence.active?`<span class="rec-badge">↻ ${recPeriodLbl[t.recurrence.period]||''}${t.recurrence.count?` · ${t.recurrence.count}×`:''}</span>`:''}
         </div>
       </div>
-      <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();deleteTask('${fid}','${t.id}')" style="flex-shrink:0">🗑️</button>
+      <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();deleteTask('${t.grupoId}','${t.id}')" style="flex-shrink:0">🗑️</button>
     </div>`;
   }).join('');
 
-  // Vincular tarefas existentes (de outros subgrupos)
+  // Vincular tarefas sem projeto
   const outrasTasksOpts=allTasksFlat()
-    .filter(t=>t.fid!==fid&&!t.done)
+    .filter(t=>!t.projetoId&&!t.done)
     .map(t=>{
-      const label=`${t.fgLabel} — ${t.ftitle}: ${t.text}`;
+      const label=`${t.gLabel}: ${t.text}`;
       const truncated=label.length>60?label.slice(0,57)+'...':label;
-      return `<option value="${t.fid}|${t.id}">${truncated}</option>`;
-    })
-    .join('');
+      return `<option value="${t.grupoId}|${t.id}">${truncated}</option>`;
+    }).join('');
 
   document.getElementById('proj-detail').innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
@@ -971,99 +1045,77 @@ function renderProjDetail(pid){
       <button class="btn btn-outline btn-xs" onclick="openModal('editprojeto','${pid}')">✏️</button>
       <button class="btn btn-outline btn-xs" onclick="deleteProj('${pid}')">🗑️</button>
     </div>
-
     <div class="card" style="padding:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <span style="font-size:13px;font-weight:600">${dn} de ${tot} tarefas concluídas</span>
-        <span style="font-size:13px;font-weight:700;color:${color}">${pct}%</span>
+        <span style="font-size:13px;font-weight:700;color:${g.color}">${pct}%</span>
       </div>
-      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${g.color}"></div></div>
       ${p.descricao?`<div style="font-size:12px;color:var(--text2);margin-top:8px">${p.descricao}</div>`:''}
     </div>
-
     <div class="card">
       <div class="card-title-row">
         <div class="card-title" style="margin:0">Tarefas do projeto</div>
-        <button class="btn btn-sm" onclick="openModal('task','${fid}')">+ Nova tarefa</button>
+        <button class="btn btn-sm" onclick="openModal('task','${gid}')">+ Nova tarefa</button>
       </div>
-      ${tList.length?`<div>${taskRows}</div>`:`<div class="empty" style="padding:1rem">Nenhuma tarefa ainda. Crie uma nova ou vincule uma existente.</div>`}
+      ${tList.length?`<div>${taskRows}</div>`:`<div class="empty" style="padding:1rem">Nenhuma tarefa ainda.</div>`}
     </div>
-
     ${outrasTasksOpts?`<div class="card">
       <div class="card-title">🔗 Vincular tarefa existente</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Selecione uma tarefa de outro subgrupo para mover para este projeto.</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Selecione uma tarefa para vincular a este projeto.</div>
       <select class="inp" id="vincular-select" style="font-size:12px;width:100%;margin-bottom:8px">
-        <option value="">— Selecione uma tarefa —</option>
-        ${outrasTasksOpts}
+        <option value="">— Selecione uma tarefa —</option>${outrasTasksOpts}
       </select>
-      <button class="btn btn-sm" style="width:100%" onclick="vincularTarefa('${fid}')">Vincular</button>
+      <button class="btn btn-sm" style="width:100%" onclick="vincularTarefa('${pid}')">Vincular</button>
     </div>`:''}`;
 }
 
-function toggleProjTask(fid,tid){
-  const t=(tasks[fid]||[]).find(t=>t.id===tid);if(!t)return;
-  if(!t.done&&t.recurrence&&t.recurrence.active){
-    undoState={fid,tid,prevDue:t.due,prevCount:t.recurrence.count||0,prevHistory:[...(t.recurrence.history||[])]};
-    if(!t.recurrence.history)t.recurrence.history=[];
-    t.recurrence.history.push(new Date().toISOString().split('T')[0]);
-    t.recurrence.count=(t.recurrence.count||0)+1;
-    t.due=nextRecDate(t.due,t.recurrence.period);
-    t.done=false;showUndoToast(t.text);
-  }else{t.done=!t.done;}
-  saveTasks();renderMetrics();renderTabs();
-  if(activeProjetoId)renderProjDetail(activeProjetoId);
-}
-
-function vincularTarefa(targetFid){
+function vincularTarefa(pid){
   const val=document.getElementById('vincular-select').value;
   if(!val){alert('Selecione uma tarefa para vincular.');return;}
-  const[oldFid,tid]=val.split('|');
-  const ol=tasks[oldFid]||[];
-  const t=ol.find(t=>t.id===tid);
+  const[gid,tid]=val.split('|');
+  const t=(tasks[gid]||[]).find(t=>t.id===tid);
   if(!t)return;
-  tasks[oldFid]=ol.filter(t=>t.id!==tid);
-  if(!tasks[targetFid])tasks[targetFid]=[];
-  tasks[targetFid].push(t);
+  t.projetoId=pid;
   saveTasks();renderMetrics();renderTabs();renderDash();
   renderProjDetail(activeProjetoId);
 }
 
 function deleteProj(pid){
   const p=projetos.find(p=>p.id===pid);if(!p)return;
-  const cnt=(tasks[p.frenteId]||[]).length;
-  if(!confirm(`Excluir o projeto "${p.nome}"?${cnt>0?`\n\n${cnt} tarefa(s) serão mantidas em "Sem subgrupo".`:''}`))return;
-  // Move tarefas para órfãos
-  if(cnt>0){ensureOrphanFrente();(tasks[p.frenteId]||[]).forEach(t=>(tasks['sem-subgrupo']=tasks['sem-subgrupo']||[]).push(t));}
-  // Remove subgrupo e projeto
-  frentes=frentes.filter(f=>f.id!==p.frenteId);
-  delete tasks[p.frenteId];
+  const tList=allTasksFlat().filter(t=>t.projetoId===pid);
+  if(!confirm(`Excluir o projeto "${p.nome}"?${tList.length>0?`\n\n${tList.length} tarefa(s) ficarão sem projeto.`:''}`))return;
+  // Remove projetoId das tarefas
+  tList.forEach(t=>{
+    const task=(tasks[t.grupoId]||[]).find(tk=>tk.id===t.id);
+    if(task)delete task.projetoId;
+  });
   projetos=projetos.filter(pr=>pr.id!==pid);
-  saveFrente();saveTasks();saveProjetos();
+  saveTasks();saveProjetos();
   renderMetrics();renderTabs();renderDash();
   showProjList();
 }
 
 // ── MODAL ─────────────────────────────────────────────────
 const CORES=['#1D9E75','#D85A30','#378ADD','#7F77DD','#D4537E','#BA7517','#639922','#085041','#E24B4A','#5DCAA5','#534AB7','#888780'];
-function openModal(mode,fid,tid){
-  editingTask=fid&&tid?{fid,tid}:null;
+function openModal(mode,gid,tid){
+  editingTask=gid&&tid?{gid,tid,fid:gid}:null;
   const c=document.getElementById('modal-content');
-  if(mode==='task')renderTaskModal(c,fid,tid);
+  if(mode==='task')renderTaskModal(c,gid,tid);
   if(mode==='config')renderConfigModal(c);
   if(mode==='projeto')renderProjetoModal(c,null);
-  if(mode==='editprojeto')renderProjetoModal(c,fid); // fid aqui é o pid
+  if(mode==='editprojeto')renderProjetoModal(c,gid);
   document.getElementById('modal').classList.add('open');
 }
 
 function renderProjetoModal(c,pid){
   const ed=pid?projetos.find(p=>p.id===pid):null;
-  const gruposOpts=grupos.filter(g=>g.id!=='todas').map(g=>`<option value="${g.id}" ${ed&&ed.grupo===g.id?'selected':''}>${g.icon} ${g.label}</option>`).join('');
+  const gruposOpts=grupos.filter(g=>g.id!=='todas').map(g=>`<option value="${g.id}" ${ed&&(ed.grupoId||ed.grupo)===g.id?'selected':''}>${g.icon} ${g.label}</option>`).join('');
   c.innerHTML=`<h3>${ed?'Editar projeto':'Novo projeto'}</h3>
     <div class="field"><label>Nome do projeto *</label><input id="pj-nome" value="${ed?ed.nome:''}" placeholder="Ex: Festa de aniversário"/></div>
     <div class="field"><label>Frente *</label><select id="pj-grupo"><option value="">— Selecione —</option>${gruposOpts}</select></div>
     <div class="field"><label>Data final</label><input type="date" id="pj-data" value="${ed&&ed.dataFim?ed.dataFim:''}"/></div>
     <div class="field"><label>Descrição</label><input id="pj-desc" value="${ed?ed.descricao||'':''}" placeholder="Opcional"/></div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Ao criar o projeto, um subgrupo com o mesmo nome será criado automaticamente na frente escolhida.</div>
     <div class="modal-btns">
       <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
       <button class="btn" onclick="saveProjetoModal('${pid||''}')">Salvar</button>
@@ -1080,37 +1132,34 @@ function saveProjetoModal(pid){
   const descricao=(document.getElementById('pj-desc').value||'').trim();
 
   if(pid){
-    // Editar projeto existente
     const p=projetos.find(p=>p.id===pid);if(!p)return;
-    const fOld=frentes.find(f=>f.id===p.frenteId);
-    if(fOld){fOld.title=nome;fOld.grupo=grupo;}
-    p.nome=nome;p.grupo=grupo;p.dataFim=dataFim;p.descricao=descricao;
-    saveFrente();saveProjetos();
+    p.nome=nome;p.grupoId=grupo;p.grupo=grupo;p.dataFim=dataFim;p.descricao=descricao;
+    saveProjetos();
     closeModal();renderProjDetail(pid);renderTabs();renderDash();
   } else {
-    // Criar projeto novo — cria subgrupo automaticamente
-    const fid='pf'+uid();
-    const novaFrente={id:fid,title:nome,grupo,open:true};
-    frentes.push(novaFrente);
-    tasks[fid]=[];
-    const novoProjeto={id:'pj'+uid(),nome,grupo,frenteId:fid,dataFim,descricao};
+    const novoProjeto={id:'pj'+uid(),nome,grupoId:grupo,grupo,dataFim,descricao};
     projetos.push(novoProjeto);
-    saveFrente();saveTasks();saveProjetos();
+    saveProjetos();
     closeModal();renderTabs();renderDash();
     showProjDetail(novoProjeto.id);
   }
 }
-function openEditTask(fid,tid){openModal('task',fid,tid);}
-function closeModal(){document.getElementById('modal').classList.remove('open');editingTask=null;editingFrenteId=null;editingGrupoId=null;}
+function openEditTask(gid,tid){openModal('task',gid,tid);}
+function closeModal(){document.getElementById('modal').classList.remove('open');editingTask=null;editingGrupoId=null;}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
 
-function renderTaskModal(c,fid,tid){
-  const ed=editingTask?((tasks[fid]||[]).find(t=>t.id===tid)||null):null;
+function renderTaskModal(c,gid,tid){
+  const ed=editingTask?((tasks[gid]||[]).find(t=>t.id===tid)||null):null;
   const rec=ed&&ed.recurrence?ed.recurrence:{active:false,period:'semanal',count:0};
-  const fOpts=`<option value="">— Selecione um subgrupo —</option>`+frentes.map(f=>{const g=grupos.find(g=>g.id===f.grupo)||{label:''};const sel=(ed&&fid===f.id)||((!ed)&&fid&&fid===f.id)?'selected':'';return `<option value="${f.id}" ${sel}>${g.label} — ${f.title}</option>`;}).join('');
+  const selGid=ed?ed.grupoId:(gid&&gid!=='todas'?gid:'');
+  const gOpts=`<option value="">— Selecione a frente —</option>`+grupos.filter(g=>g.id!=='todas').map(g=>`<option value="${g.id}" ${selGid===g.id?'selected':''}>${g.icon} ${g.label}</option>`).join('');
+  const projOpts=projetos.filter(p=>p.grupoId===selGid||p.grupo===selGid).map(p=>`<option value="${p.id}" ${ed&&ed.projetoId===p.id?'selected':''}>${p.nome}</option>`).join('');
   c.innerHTML=`<h3>${ed?'Editar tarefa':'Nova tarefa'}</h3>
     <div class="field"><label>Tarefa *</label><input id="m-text" value="${ed?ed.text||'':''}" placeholder="Descrição da tarefa"/></div>
-    <div class="field"><label>Subgrupo *</label><select id="m-frente">${fOpts}</select></div>
+    <div class="field"><label>Frente *</label><select id="m-grupo" onchange="updateProjetoOpts()">${gOpts}</select></div>
+    <div class="field"><label>Projeto <span style="color:var(--text3);font-weight:400">(opcional)</span></label>
+      <select id="m-projeto"><option value="">— Sem projeto —</option>${projOpts}</select>
+    </div>
     <div class="field"><label>Prioridade *</label>
       <select id="m-p">
         <option value="">— Selecione a prioridade —</option>
@@ -1146,29 +1195,51 @@ function renderTaskModal(c,fid,tid){
     </div>`;
   setTimeout(()=>document.getElementById('m-text').focus(),80);
 }
+
+function updateProjetoOpts(){
+  const gid=document.getElementById('m-grupo').value;
+  const projOpts=projetos.filter(p=>p.grupoId===gid||p.grupo===gid).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  document.getElementById('m-projeto').innerHTML=`<option value="">— Sem projeto —</option>${projOpts}`;
+}
 function toggleRecFields(){document.getElementById('rec-fields').style.display=document.getElementById('m-rec-active').value==='1'?'block':'none';}
 function saveTaskModal(){
   const text=(document.getElementById('m-text').value||'').trim();
   if(!text){alert('Digite o nome da tarefa.');return;}
-  const fid=document.getElementById('m-frente').value;
-  if(!fid){alert('Selecione um subgrupo para a tarefa.');return;}
+  const gid=document.getElementById('m-grupo').value;
+  if(!gid){alert('Selecione a frente para a tarefa.');return;}
   const p=document.getElementById('m-p').value;
   if(!p){alert('Selecione a prioridade da tarefa.');return;}
   const due=document.getElementById('m-due').value||'';
   const note=(document.getElementById('m-note').value||'').trim();
+  const projetoId=document.getElementById('m-projeto').value||undefined;
   const recActive=document.getElementById('m-rec-active').value==='1';
   const recPeriod=document.getElementById('m-rec-period')?document.getElementById('m-rec-period').value:'semanal';
   if(recActive&&!due){alert('Tarefas recorrentes precisam de uma data de vencimento.');return;}
   const recurrence=recActive?{active:true,period:recPeriod,count:0,history:[]}:null;
-  if(editingTask){if(editingTask.fid!==fid){const ol=tasks[editingTask.fid]||[];const t=ol.find(t=>t.id===editingTask.tid);tasks[editingTask.fid]=ol.filter(t=>t.id!==editingTask.tid);if(t){t.text=text;t.p=p;t.due=due;t.note=note;t.recurrence=recurrence;if(!tasks[fid])tasks[fid]=[];tasks[fid].push(t);}}else{const t=(tasks[fid]||[]).find(t=>t.id===editingTask.tid);if(t){t.text=text;t.p=p;t.due=due;t.note=note;t.recurrence=recurrence;}}}
-  else{if(!tasks[fid])tasks[fid]=[];tasks[fid].push({id:uid(),text,done:false,p,due,note,recurrence});}
+
+  if(editingTask){
+    const oldGid=editingTask.fid||editingTask.gid;
+    if(oldGid!==gid){
+      // Mudou de frente — move tarefa
+      const ol=tasks[oldGid]||[];
+      const t=ol.find(t=>t.id===editingTask.tid);
+      tasks[oldGid]=ol.filter(t=>t.id!==editingTask.tid);
+      if(t){t.text=text;t.p=p;t.due=due;t.note=note;t.recurrence=recurrence;t.grupoId=gid;t.projetoId=projetoId;if(!tasks[gid])tasks[gid]=[];tasks[gid].push(t);}
+    } else {
+      const t=(tasks[gid]||[]).find(t=>t.id===editingTask.tid);
+      if(t){t.text=text;t.p=p;t.due=due;t.note=note;t.recurrence=recurrence;t.grupoId=gid;t.projetoId=projetoId;}
+    }
+  } else {
+    if(!tasks[gid])tasks[gid]=[];
+    tasks[gid].push({id:uid(),text,done:false,p,due,note,recurrence,grupoId:gid,projetoId});
+  }
   saveTasks();closeModal();renderMetrics();renderTabs();renderDash();
   if(activeView==='plan')renderPlan();
   if(activeProjetoId)renderProjDetail(activeProjetoId);
 }
 
 // ── CONFIG ────────────────────────────────────────────────
-function renderConfigModal(c){c.innerHTML=`<h3>⚙️ Configurações</h3><div id="config-section"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px"><button class="btn btn-outline" onclick="renderGruposConfig()">🎨 Gerenciar frentes</button><button class="btn btn-outline" onclick="renderFrentesConfig()">📁 Gerenciar subgrupos</button></div><button class="btn btn-outline" style="width:100%" onclick="closeModal()">Fechar</button></div>`;}
+function renderConfigModal(c){c.innerHTML=`<h3>⚙️ Configurações</h3><div id="config-section"><div style="margin-bottom:16px"><button class="btn btn-outline" style="width:100%" onclick="renderGruposConfig()">🎨 Gerenciar frentes</button></div><button class="btn btn-outline" style="width:100%" onclick="closeModal()">Fechar</button></div>`;}
 
 async function tryRecoverData(){
   // Tenta todas as chaves possíveis do localStorage antigo
@@ -1209,7 +1280,7 @@ async function tryRecoverData(){
   if(!confirm(`✅ Encontrei ${total} tarefas no backup local!\n\nDeseja restaurar esses dados? Isso vai substituir as frentes e tarefas atuais.`))return;
 
   // Restaura
-  if(foundFrentes&&foundFrentes.length>0){frentes=foundFrentes;await saveFrente();}
+  // recovery simplified
   tasks=foundTasks;await saveTasks();
   closeModal();renderMetrics();renderTabs();renderDash();
   alert('✅ Dados restaurados com sucesso!');
@@ -1224,15 +1295,18 @@ function selectColorEdit(cor,p){selectedColor=cor;document.querySelectorAll(`[id
 function selectColorGrupo(cor){selectColorEdit(cor,'ngco');}
 function addGrupo(){const name=(document.getElementById('ng-name').value||'').trim(),icon=(document.getElementById('ng-icon').value||'📌').trim();if(!name){alert('Digite o nome');return;}grupos.push({id:'g'+uid(),label:name,icon,color:selectedColor});saveGrupos();renderGruposConfig();renderTabs();renderDash();}
 function saveGrupo(){const g=grupos.find(g=>g.id===editingGrupoId);if(!g)return;g.label=(document.getElementById('eg-name').value||g.label).trim();g.icon=(document.getElementById('eg-icon').value||g.icon).trim();g.color=selectedColor;saveGrupos();renderGruposConfig();renderTabs();renderDash();if(activeView==='plan')renderPlan();}
-function deleteGrupo(gid){const subs=frentes.filter(f=>f.grupo===gid),tot=subs.reduce((a,f)=>a+(tasks[f.id]||[]).length,0);if(!confirm(`Excluir esta frente?${subs.length>0?`\n\n${subs.length} subgrupo(s) e ${tot} tarefa(s) ficarão sem frente.`:''}`))return;ensureOrphanGroup();subs.forEach(f=>{f.grupo='sem-frente';});saveFrente();grupos=grupos.filter(g=>g.id!==gid);saveGrupos();renderGruposConfig();renderTabs();renderDash();}
+function deleteGrupo(gid){
+  const tot=(tasks[gid]||[]).length;
+  const projCount=projetos.filter(p=>p.grupoId===gid||p.grupo===gid).length;
+  if(!confirm(`Excluir esta frente?${tot>0?`\n\n${tot} tarefa(s) serão perdidas.`:''}${projCount>0?`\n${projCount} projeto(s) serão removidos.`:''}`))return;
+  projetos=projetos.filter(p=>(p.grupoId||p.grupo)!==gid);
+  delete tasks[gid];
+  grupos=grupos.filter(g=>g.id!==gid);
+  saveGrupos();saveTasks();saveProjetos();
+  renderGruposConfig();renderTabs();renderDash();
+}
 
-function renderFrentesConfig(){const c=document.getElementById('config-section'),ge=grupos.filter(g=>g.id!=='todas');c.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><button class="btn btn-outline btn-sm" onclick="renderConfigModal(document.getElementById('modal-content'))">← Voltar</button><strong>Subgrupos</strong></div><div>${frentes.map(f=>{const g=grupos.find(g=>g.id===f.grupo)||{label:'',color:'#888'};return `<div class="frente-item"><div style="width:10px;height:10px;border-radius:50%;background:${g.color};flex-shrink:0"></div><span style="font-size:11px;color:var(--text2);width:65px;flex-shrink:0">${g.label}</span><span style="flex:1;font-size:13px">${f.title}</span><button class="btn btn-outline btn-xs" onclick="startEditFrente('${f.id}')">Editar</button><button class="btn btn-outline btn-xs" onclick="deleteFrente('${f.id}')">🗑️</button></div>`;}).join('')}</div><div class="section-sep" style="margin-top:14px">Novo subgrupo</div><div class="field"><label>Nome</label><input id="nf-name" placeholder="Ex: Meditação"/></div><div class="field"><label>Frente (grupo maior)</label><select id="nf-grupo">${ge.map(g=>`<option value="${g.id}">${g.icon} ${g.label}</option>`).join('')}</select></div><div style="font-size:12px;color:var(--text2);margin-bottom:10px">A cor é herdada da frente escolhida.</div><button class="btn" style="width:100%;margin-bottom:8px" onclick="addFrente()">+ Criar subgrupo</button><button class="btn btn-outline" style="width:100%" onclick="closeModal()">Fechar</button>`;}
-function startEditFrente(fid){editingFrenteId=fid;const f=frentes.find(f=>f.id===fid),ge=grupos.filter(g=>g.id!=='todas'),c=document.getElementById('config-section');c.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><button class="btn btn-outline btn-sm" onclick="renderFrentesConfig()">← Voltar</button><strong>Editar subgrupo</strong></div><div class="field"><label>Nome</label><input id="ef-name" value="${f.title}"/></div><div class="field"><label>Frente</label><select id="ef-grupo">${ge.map(g=>`<option value="${g.id}" ${f.grupo===g.id?'selected':''}>${g.icon} ${g.label}</option>`).join('')}</select></div><div class="modal-btns"><button class="btn btn-outline" onclick="renderFrentesConfig()">Cancelar</button><button class="btn" onclick="saveFrente2()">Salvar</button></div>`;}
-function saveFrente2(){const f=frentes.find(f=>f.id===editingFrenteId);if(!f)return;f.title=(document.getElementById('ef-name').value||f.title).trim();f.grupo=document.getElementById('ef-grupo').value;saveFrente();renderFrentesConfig();renderTabs();renderDash();}
-function addFrente(){const name=(document.getElementById('nf-name').value||'').trim(),grupo=document.getElementById('nf-grupo').value;if(!name){alert('Digite o nome');return;}const nf={id:'f'+uid(),title:name,grupo,open:false};frentes.push(nf);tasks[nf.id]=[];saveFrente();saveTasks();renderFrentesConfig();renderTabs();renderDash();}
-function deleteFrente(fid){const cnt=(tasks[fid]||[]).length;if(!confirm(`Excluir este subgrupo?${cnt>0?`\n\n${cnt} tarefa(s) serão mantidas em "Sem subgrupo".`:''}`))return;if(cnt>0){ensureOrphanFrente();(tasks[fid]||[]).forEach(t=>(tasks['sem-subgrupo']=tasks['sem-subgrupo']||[]).push(t));}frentes=frentes.filter(f=>f.id!==fid);delete tasks[fid];saveFrente();saveTasks();renderFrentesConfig();renderMetrics();renderTabs();renderDash();}
-function ensureOrphanGroup(){if(!grupos.find(g=>g.id==='sem-frente')){grupos.push({id:'sem-frente',label:'Sem frente',icon:'⚠️',color:'#888780'});saveGrupos();}}
-function ensureOrphanFrente(){ensureOrphanGroup();if(!frentes.find(f=>f.id==='sem-subgrupo')){frentes.push({id:'sem-subgrupo',title:'Sem subgrupo',grupo:'sem-frente',open:true});saveFrente();}if(!tasks['sem-subgrupo'])tasks['sem-subgrupo']=[];}
+
 </script>
 </body>
 </html>
