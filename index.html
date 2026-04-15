@@ -236,13 +236,17 @@ td input:focus,td select:focus{border-color:var(--green)}
         <div class="dropdown-menu" id="dropdown-menu">
           <button class="dropdown-item" onclick="closeDropdown();openModal('config')"><span class="dropdown-item-icon">🎨</span> Gerenciar frentes</button>
           <button class="dropdown-item" onclick="closeDropdown();setView('proj',document.querySelector('.bn[onclick*=proj]'))"><span class="dropdown-item-icon">📋</span> Gerenciar projetos</button>
-          <div class="dropdown-divider"></div>
-          <button class="dropdown-item" onclick="closeDropdown()"><span class="dropdown-item-icon">🌐</span> Idioma</button>
-          <button class="dropdown-item" onclick="closeDropdown()"><span class="dropdown-item-icon">⭐</span> Assinatura</button>
         </div>
       </div>
       <img id="user-avatar" class="user-avatar" src="" style="display:none" onclick="openPerfil()" title="Meu perfil"/>
-      <button class="btn btn-sm btn-ghost" onclick="confirmLogout()" title="Sair" id="btn-sair" style="display:none">🚪</button>
+      <button onclick="confirmLogout()" title="Sair" id="btn-sair" style="display:none;background:transparent;border:none;cursor:pointer;padding:4px">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="16" cy="16" r="16" fill="#E24B4A"/>
+          <path d="M18 10H22V22H18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M13 20L9 16L13 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="9" y1="16" x2="20" y2="16" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
     </div>
   </div>
 </div>
@@ -400,10 +404,20 @@ function openPerfil(){
         Conta vinculada via Google. Para alterar nome ou foto, acesse as configurações da sua conta Google.
       </div>
     </div>
-    <div style="padding:14px">
-      <button class="btn btn-outline" style="width:100%;margin-bottom:8px" onclick="exportBackup()">💾 Exportar backup dos dados</button>
-      <button class="btn" style="width:100%;background:#E24B4A;border-color:#E24B4A" onclick="confirmLogout()">🚪 Sair da conta</button>
-    </div>`;
+    <div style="padding:0 14px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:14px 0 6px">Preferências</div>
+      <div class="card" style="padding:0;overflow:hidden;margin-bottom:12px">
+        <button onclick="alert('Em breve!')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;width:100%;border:none;background:transparent;cursor:pointer;font-family:inherit;font-size:14px;color:var(--text);border-bottom:1px solid var(--border)">
+          <span style="font-size:18px">🌐</span><span style="flex:1;text-align:left">Idioma</span><span style="font-size:12px;color:var(--text3)">Português ›</span>
+        </button>
+        <button onclick="alert('Em breve!')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;width:100%;border:none;background:transparent;cursor:pointer;font-family:inherit;font-size:14px;color:var(--text)">
+          <span style="font-size:18px">⭐</span><span style="flex:1;text-align:left">Assinatura</span><span style="font-size:12px;color:var(--text3)">Grátis ›</span>
+        </button>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:6px 0">Dados</div>
+      <button class="btn btn-outline" style="width:100%;margin-bottom:8px;margin-top:8px" onclick="exportBackup()">💾 Exportar backup dos dados</button>
+      <button class="btn" style="width:100%;background:#E24B4A;border-color:#E24B4A;margin-bottom:14px" onclick="confirmLogout()">🚪 Sair da conta</button>
+    </div>
   // Mostra view perfil sem aparecer no menu inferior
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   document.getElementById('view-perfil').classList.add('active');
@@ -1311,7 +1325,7 @@ function saveTaskModal(){
 }
 
 // ── CONFIG ────────────────────────────────────────────────
-function renderConfigModal(c){c.innerHTML=`<h3>⚙️ Configurações</h3><div id="config-section"><div style="margin-bottom:16px"><button class="btn btn-outline" style="width:100%" onclick="renderGruposConfig()">🎨 Gerenciar frentes</button></div><button class="btn btn-outline" style="width:100%" onclick="closeModal()">Fechar</button></div>`;}
+function renderConfigModal(c){renderGruposConfig();}
 
 async function tryRecoverData(){
   // Tenta todas as chaves possíveis do localStorage antigo
