@@ -147,6 +147,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .pdot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0}
 .plan-filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
 .table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+.table-wrap th:nth-child(2),.table-wrap td:nth-child(2){min-width:90px}
+.table-wrap th:nth-child(3),.table-wrap td:nth-child(3){min-width:90px}
 table{width:100%;border-collapse:collapse;font-size:12px;min-width:580px}
 thead tr{background:var(--surface2)}
 th{padding:9px 10px;text-align:left;font-weight:600;color:var(--text2);border-bottom:2px solid var(--border);white-space:nowrap}
@@ -184,6 +186,23 @@ td input:focus,td select:focus{border-color:var(--green)}
 .view{display:none}
 .view.active{display:block}
 .user-avatar{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.5);cursor:pointer;object-fit:cover}
+/* DRAWER */
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:400}
+.drawer-overlay.open{display:block}
+.drawer{position:fixed;top:0;right:-320px;width:300px;max-width:85vw;height:100vh;background:var(--surface);z-index:401;transition:right 0.28s ease;box-shadow:-4px 0 24px rgba(0,0,0,0.15);display:flex;flex-direction:column}
+.drawer.open{right:0}
+.drawer-header{padding:20px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.drawer-avatar{width:48px;height:48px;border-radius:50%;border:2px solid var(--green);object-fit:cover;flex-shrink:0}
+.drawer-avatar-placeholder{width:48px;height:48px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.drawer-name{font-size:14px;font-weight:600;color:var(--text)}
+.drawer-email{font-size:11px;color:var(--text2);margin-top:2px}
+.drawer-body{flex:1;overflow-y:auto;padding:8px 0}
+.drawer-section{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:12px 16px 4px}
+.drawer-item{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;color:var(--text);font-size:14px;border:none;background:transparent;width:100%;text-align:left;font-family:inherit}
+.drawer-item:hover{background:var(--surface2)}
+.drawer-item-icon{font-size:18px;width:24px;text-align:center;flex-shrink:0}
+.drawer-item.danger{color:#E24B4A}
+.drawer-footer{padding:16px;border-top:1px solid var(--border)}
 </style>
 </head>
 <body>
@@ -218,10 +237,48 @@ td input:focus,td select:focus{border-color:var(--green)}
       </div>
     </div>
     <div class="hdr-btns">
-      <button class="btn btn-sm btn-ghost" onclick="openModal('task')">+ Tarefa</button>
-      <button class="btn btn-sm btn-ghost" onclick="openModal('config')">⚙️</button>
-      <img id="user-avatar" class="user-avatar" src="" style="display:none" onclick="confirmLogout()" title="Sair"/>
+      <button class="btn btn-sm btn-ghost" onclick="openDrawer()">⚙️</button>
+      <img id="user-avatar" class="user-avatar" src="" style="display:none" onclick="openDrawer()" title="Configurações"/>
     </div>
+  </div>
+</div>
+
+<!-- DRAWER -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <img id="drawer-avatar" class="drawer-avatar" src="" style="display:none"/>
+    <div class="drawer-avatar-placeholder" id="drawer-avatar-placeholder">👤</div>
+    <div>
+      <div class="drawer-name" id="drawer-name">—</div>
+      <div class="drawer-email" id="drawer-email">—</div>
+    </div>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-section">Conta</div>
+    <button class="drawer-item" onclick="closeDrawer();openModal('perfil')">
+      <span class="drawer-item-icon">👤</span> Meu perfil
+    </button>
+    <div class="drawer-section">App</div>
+    <button class="drawer-item" onclick="closeDrawer();openModal('config')">
+      <span class="drawer-item-icon">🎨</span> Gerenciar frentes
+    </button>
+    <button class="drawer-item" onclick="closeDrawer();openModal('projetos-config')">
+      <span class="drawer-item-icon">📋</span> Gerenciar projetos
+    </button>
+    <div class="drawer-section">Dados</div>
+    <button class="drawer-item" onclick="closeDrawer();exportBackup()">
+      <span class="drawer-item-icon">💾</span> Exportar backup
+    </button>
+    <div class="drawer-section">Preferências</div>
+    <button class="drawer-item" onclick="toggleDarkMode()">
+      <span class="drawer-item-icon" id="dark-mode-icon">🌙</span> <span id="dark-mode-label">Modo escuro</span>
+    </button>
+  </div>
+  <div class="drawer-footer">
+    <button class="drawer-item danger" style="width:100%;border-radius:var(--radius-sm)" onclick="confirmLogout()">
+      <span class="drawer-item-icon">🚪</span> Sair da conta
+    </button>
   </div>
 </div>
 
@@ -348,6 +405,34 @@ function loginGoogle(){
   });
 }
 function confirmLogout(){if(confirm('Sair da conta?'))auth.signOut();}
+
+// ── DRAWER ────────────────────────────────────────────────
+function openDrawer(){
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+}
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+}
+
+// ── DARK MODE ─────────────────────────────────────────────
+function toggleDarkMode(){
+  document.body.classList.toggle('dark');
+  const isDark=document.body.classList.contains('dark');
+  localStorage.setItem('darkMode',isDark?'1':'0');
+  document.getElementById('dark-mode-icon').textContent=isDark?'☀️':'🌙';
+  document.getElementById('dark-mode-label').textContent=isDark?'Modo claro':'Modo escuro';
+}
+function initDarkMode(){
+  if(localStorage.getItem('darkMode')==='1'){
+    document.body.classList.add('dark');
+    const icon=document.getElementById('dark-mode-icon');
+    const label=document.getElementById('dark-mode-label');
+    if(icon)icon.textContent='☀️';
+    if(label)label.textContent='Modo claro';
+  }
+}
 
 let currentUID=null;
 
@@ -565,10 +650,18 @@ async function initApp(user){
 
   document.getElementById('hdr-user').textContent=user.displayName||user.email;
   const av=document.getElementById('user-avatar');
-  if(user.photoURL){av.src=user.photoURL;av.style.display='block';}
+  if(user.photoURL){
+    av.src=user.photoURL;av.style.display='block';
+    const da=document.getElementById('drawer-avatar');
+    da.src=user.photoURL;da.style.display='block';
+    document.getElementById('drawer-avatar-placeholder').style.display='none';
+  }
+  document.getElementById('drawer-name').textContent=user.displayName||'Usuário';
+  document.getElementById('drawer-email').textContent=user.email||'';
   document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
   document.getElementById('loading-screen').style.display='none';
   document.getElementById('app-root').style.display='block';
+  initDarkMode();
   renderMetrics();renderPesoCard();renderTabs();renderDash();
 }
 
@@ -632,12 +725,12 @@ function taskVis(t){
 }
 
 // ── PESO ─────────────────────────────────────────────────
-function pesoStats(){const first=pesoLog.length?pesoLog[0].val:null;const last=pesoLog.length?pesoLog[pesoLog.length-1].val:null;const diff=(first!=null&&last!=null)?+(last-first).toFixed(1):null;const metaKg=parseFloat(metaPeso.kg)||10;const pct=diff!==null?Math.min(100,Math.max(0,Math.round(Math.abs(diff)/metaKg*100))):0;const diasRestantes=metaPeso.dataFim?daysFrom(metaPeso.dataFim):null;return{first,last,diff,pct,metaKg,diasRestantes};}
+function pesoStats(){const first=pesoLog.length?pesoLog[0].val:null;const last=pesoLog.length?pesoLog[pesoLog.length-1].val:null;const diff=(first!=null&&last!=null)?+(last-first).toFixed(1):null;const metaKg=parseFloat(metaPeso.kg)||0;const pct=metaKg&&diff!==null?Math.min(100,Math.max(0,Math.round(Math.abs(diff)/metaKg*100))):0;const diasRestantes=metaPeso.dataFim?daysFrom(metaPeso.dataFim):null;return{first,last,diff,pct,metaKg,diasRestantes};}
 function addPeso(id){const inp=document.getElementById(id);const v=parseFloat(inp.value);if(isNaN(v)||v<30||v>300){alert('Digite um peso válido');return;}const today=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});const idx=pesoLog.findIndex(p=>p.date===today);if(idx>=0)pesoLog[idx].val=v;else pesoLog.push({date:today,val:v});inp.value='';savePeso();renderPesoCard();if(activeView==='peso')renderCorpoFull();}
 function addGordura(id){const inp=document.getElementById(id);const v=parseFloat(inp.value);if(isNaN(v)||v<1||v>70){alert('% inválido');return;}const today=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});const idx=gorduraLog.findIndex(p=>p.date===today);if(idx>=0)gorduraLog[idx].val=v;else gorduraLog.push({date:today,val:v});inp.value='';saveGordura();renderCorpoFull();}
 function deletePeso(date){if(!confirm('Remover?'))return;pesoLog=pesoLog.filter(p=>p.date!==date);savePeso();renderPesoCard();if(activeView==='peso')renderCorpoFull();}
 function deleteGordura(date){if(!confirm('Remover?'))return;gorduraLog=gorduraLog.filter(p=>p.date!==date);saveGordura();renderCorpoFull();}
-function saveMeta2(){metaPeso.kg=parseFloat(document.getElementById('meta-kg').value)||10;metaPeso.dataFim=document.getElementById('meta-data').value||'';saveMeta();renderPesoCard();renderCorpoFull();}
+function saveMeta2(){metaPeso.kg=parseFloat(document.getElementById('meta-kg').value)||'';metaPeso.dataFim=document.getElementById('meta-data').value||'';saveMeta();renderPesoCard();renderCorpoFull();}
 function saveAlturaData(){corpoData.altura=(document.getElementById('inp-altura').value||'').replace(',','.');corpoData.sexo=document.getElementById('inp-sexo').value;saveCorpo();renderCorpoFull();}
 
 function renderPesoCard(){
@@ -666,7 +759,7 @@ function renderCorpoFull(){
   const gr=gorduraLog.slice().reverse().map((p,i,arr)=>{const prev=arr[i+1];let dt='—',dc='var(--text2)';if(prev){const d=+(p.val-prev.val).toFixed(1);dt=(d<=0?'▼ ':'▲ ')+Math.abs(d)+'%';dc=d<=0?'var(--green)':'#E24B4A';}const mk=last?+(last*(1-p.val/100)).toFixed(1):'—';return `<tr><td>${p.date}</td><td><strong>${p.val}%</strong></td><td style="color:${dc};font-weight:700">${dt}</td><td style="color:var(--green)">${mk} kg</td><td><button class="btn btn-outline btn-xs" onclick="deleteGordura('${p.date}')">🗑️</button></td></tr>`;}).join('');
   document.getElementById('corpo-full').innerHTML=`
     <div class="card"><div class="card-title">💪 Meu corpo</div><div class="chips"><span class="chip chip-b">Peso: ${last!=null?last+' kg':'—'}</span><span class="chip chip-o">${diff!==null?(diff<=0?'▼ Perda':'▲ Ganho')+': '+Math.abs(diff)+' kg':'—'}</span><span class="chip chip-g">Meta: −${metaKg} kg até ${mf}</span>${diasRestantes!==null?`<span class="chip ${diasRestantes<0?'chip-r':'chip-b'}">${diasRestantes>=0?diasRestantes+' dias restantes':'Prazo encerrado'}</span>`:''}</div>${pesoLog.length?`<div class="bar-wrap"><div class="bar-labels"><span>Início: ${first} kg</span><span>${pct}% da meta</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--green)"></div></div></div>`:''}</div>
-    <div class="card"><div class="card-title">✏️ Editar meta de peso</div><div class="grid3"><div class="field" style="margin:0"><label>Perda (kg)</label><input class="inp" type="number" id="meta-kg" value="${metaPeso.kg||10}" min="1" max="100" step="0.5" inputmode="decimal"/></div><div class="field" style="margin:0"><label>Prazo final</label><input class="inp" type="date" id="meta-data" value="${metaPeso.dataFim||''}"/></div><div style="display:flex;align-items:flex-end"><button class="btn" style="width:100%;padding:8px" onclick="saveMeta2()">Salvar</button></div></div></div>
+    <div class="card"><div class="card-title">✏️ Editar meta de peso</div><div class="grid3"><div class="field" style="margin:0"><label>Perda (kg)</label><input class="inp" type="number" id="meta-kg" value="${metaPeso.kg||''}" placeholder="Ex: 10" min="1" max="100" step="0.5" inputmode="decimal"/></div><div class="field" style="margin:0"><label>Prazo final</label><input class="inp" type="date" id="meta-data" value="${metaPeso.dataFim||''}"/></div><div style="display:flex;align-items:flex-end"><button class="btn" style="width:100%;padding:8px" onclick="saveMeta2()">Salvar</button></div></div></div>
     <div class="card"><div class="card-title">📐 Altura e sexo</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px"><div class="field" style="margin:0"><label>Altura (metros)</label><input class="inp" type="number" id="inp-altura" value="${corpoData.altura||''}" placeholder="Ex: 1.80" step="0.01" min="1" max="2.5" inputmode="decimal"/></div><div class="field" style="margin:0"><label>Sexo</label><select class="inp" id="inp-sexo"><option value="" ${!corpoData.sexo?'selected':''}>Não informado</option><option value="M" ${corpoData.sexo==='M'?'selected':''}>Masculino</option><option value="F" ${corpoData.sexo==='F'?'selected':''}>Feminino</option></select></div></div><button class="btn btn-sm btn-outline" onclick="saveAlturaData()">Salvar</button>${corpoData.altura?`<div style="font-size:13px;color:var(--text2);margin-top:8px">Altura: <strong>${ad}</strong>${corpoData.sexo?` · <strong>${corpoData.sexo==='M'?'Masculino':'Feminino'}</strong>`:''}</div>`:''}</div>
     <div class="card"><div class="card-title">📊 Métricas atuais</div><div class="grid2"><div class="stat-box"><div class="stat-val">${imc||'—'}</div><div class="stat-label">IMC</div><div class="stat-sub" style="color:${ii.color}">${ii.label}</div></div><div class="stat-box"><div class="stat-val">${lg!=null?lg+'%':'—'}</div><div class="stat-label">Gordura corporal</div><div class="stat-sub" style="color:${gi?gi.color:'var(--text2)'}">${gi?gi.label:(gKg!=null?gKg+' kg':'—')}</div></div><div class="stat-box"><div class="stat-val">${mmKg!=null?mmKg+' kg':'—'}</div><div class="stat-label">Massa magra</div><div class="stat-sub" style="color:var(--green)">${mmPct!=null?mmPct+'%':'auto'}</div></div><div class="stat-box"><div class="stat-val">${pct}%</div><div class="stat-label">Meta concluída</div><div class="stat-sub" style="color:var(--text2)">−${metaKg} kg</div></div></div>${imc?`<div class="imc-box" style="background:${ii.bg};margin-top:10px"><div class="imc-val" style="color:${ii.color}">${imc}</div><div class="imc-label" style="color:${ii.color}">${ii.label}</div><div class="imc-range">Saudável: 18,5–${corpoData.sexo==='M'?'25,0':'24,0'} · Altura: ${ad}</div></div>`:''}</div>
     <div class="card"><div class="card-title">⚖️ Registrar peso hoje</div><div class="row"><input class="inp" type="number" id="pinput2" placeholder="Peso (kg) ex: 92.5" step="0.1" min="30" max="300" inputmode="decimal"/><button class="btn" onclick="addPeso('pinput2')">Registrar</button></div>${pesoLog.length?`<div style="margin-top:12px"><div class="table-wrap"><table style="min-width:0"><thead><tr><th>Data</th><th>Peso</th><th>Variação</th><th>IMC</th><th></th></tr></thead><tbody>${pr}</tbody></table></div></div>`:'<div style="font-size:13px;color:var(--text2);margin-top:8px">Nenhum registro ainda.</div>'}</div>
@@ -1056,7 +1149,7 @@ function renderProjDetail(pid){
     <div class="card">
       <div class="card-title-row">
         <div class="card-title" style="margin:0">Tarefas do projeto</div>
-        <button class="btn btn-sm" onclick="openModal('task','${gid}')">+ Nova tarefa</button>
+        <button class="btn btn-sm" onclick="openModal('task','${gid}',null,'${pid}')">+ Nova tarefa</button>
       </div>
       ${tList.length?`<div>${taskRows}</div>`:`<div class="empty" style="padding:1rem">Nenhuma tarefa ainda.</div>`}
     </div>
@@ -1098,17 +1191,31 @@ function deleteProj(pid){
 
 // ── MODAL ─────────────────────────────────────────────────
 const CORES=['#1D9E75','#D85A30','#378ADD','#7F77DD','#D4537E','#BA7517','#639922','#085041','#E24B4A','#5DCAA5','#534AB7','#888780'];
-function openModal(mode,gid,tid){
+function openModal(mode,gid,tid,preProjetoId){
   editingTask=gid&&tid?{gid,tid,fid:gid}:null;
   const c=document.getElementById('modal-content');
-  if(mode==='task')renderTaskModal(c,gid,tid);
+  if(mode==='task')renderTaskModal(c,gid,tid,preProjetoId);
   if(mode==='config')renderConfigModal(c);
   if(mode==='projeto')renderProjetoModal(c,null);
   if(mode==='editprojeto')renderProjetoModal(c,gid);
+  if(mode==='perfil')renderPerfilModal(c);
   document.getElementById('modal').classList.add('open');
 }
 
-function renderProjetoModal(c,pid){
+function renderPerfilModal(c){
+  const user=auth.currentUser;
+  c.innerHTML=`<h3>👤 Meu perfil</h3>
+    <div style="text-align:center;margin-bottom:16px">
+      ${user&&user.photoURL?`<img src="${user.photoURL}" style="width:72px;height:72px;border-radius:50%;border:3px solid var(--green);object-fit:cover"/>`:`<div style="width:72px;height:72px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto">👤</div>`}
+      <div style="font-size:16px;font-weight:700;margin-top:10px">${user?user.displayName||'—':'—'}</div>
+      <div style="font-size:13px;color:var(--text2)">${user?user.email||'—':'—'}</div>
+    </div>
+    <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px;font-size:12px;color:var(--text2)">
+      Conta Google vinculada. Para alterar nome ou foto, acesse as configurações da sua conta Google.
+    </div>
+    <button class="btn btn-outline" style="width:100%;margin-bottom:8px" onclick="closeModal();exportBackup()">💾 Exportar backup dos dados</button>
+    <button class="btn btn-red" style="width:100%" onclick="closeModal();confirmLogout()">🚪 Sair da conta</button>`;
+}
   const ed=pid?projetos.find(p=>p.id===pid):null;
   const gruposOpts=grupos.filter(g=>g.id!=='todas').map(g=>`<option value="${g.id}" ${ed&&(ed.grupoId||ed.grupo)===g.id?'selected':''}>${g.icon} ${g.label}</option>`).join('');
   c.innerHTML=`<h3>${ed?'Editar projeto':'Novo projeto'}</h3>
@@ -1148,12 +1255,13 @@ function openEditTask(gid,tid){openModal('task',gid,tid);}
 function closeModal(){document.getElementById('modal').classList.remove('open');editingTask=null;editingGrupoId=null;}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
 
-function renderTaskModal(c,gid,tid){
+function renderTaskModal(c,gid,tid,preProjetoId){
   const ed=editingTask?((tasks[gid]||[]).find(t=>t.id===tid)||null):null;
   const rec=ed&&ed.recurrence?ed.recurrence:{active:false,period:'semanal',count:0};
   const selGid=ed?ed.grupoId:(gid&&gid!=='todas'?gid:'');
+  const selPid=ed?ed.projetoId:(preProjetoId||'');
   const gOpts=`<option value="">— Selecione a frente —</option>`+grupos.filter(g=>g.id!=='todas').map(g=>`<option value="${g.id}" ${selGid===g.id?'selected':''}>${g.icon} ${g.label}</option>`).join('');
-  const projOpts=projetos.filter(p=>p.grupoId===selGid||p.grupo===selGid).map(p=>`<option value="${p.id}" ${ed&&ed.projetoId===p.id?'selected':''}>${p.nome}</option>`).join('');
+  const projOpts=projetos.filter(p=>p.grupoId===selGid||p.grupo===selGid).map(p=>`<option value="${p.id}" ${selPid===p.id?'selected':''}>${p.nome}</option>`).join('');
   c.innerHTML=`<h3>${ed?'Editar tarefa':'Nova tarefa'}</h3>
     <div class="field"><label>Tarefa *</label><input id="m-text" value="${ed?ed.text||'':''}" placeholder="Descrição da tarefa"/></div>
     <div class="field"><label>Frente *</label><select id="m-grupo" onchange="updateProjetoOpts()">${gOpts}</select></div>
@@ -1239,7 +1347,29 @@ function saveTaskModal(){
 }
 
 // ── CONFIG ────────────────────────────────────────────────
-function renderConfigModal(c){c.innerHTML=`<h3>⚙️ Configurações</h3><div id="config-section"><div style="margin-bottom:16px"><button class="btn btn-outline" style="width:100%" onclick="renderGruposConfig()">🎨 Gerenciar frentes</button></div><button class="btn btn-outline" style="width:100%" onclick="closeModal()">Fechar</button></div>`;}
+function renderConfigModal(c){c.innerHTML=`<h3>⚙️ Configurações</h3><div id="config-section"><div style="margin-bottom:16px"><button class="btn btn-outline" style="width:100%" onclick="renderGruposConfig()">🎨 Gerenciar frentes</button></div><div style="margin-bottom:16px"><button class="btn btn-outline" style="width:100%" onclick="exportBackup()">💾 Exportar backup dos dados</button></div><button class="btn btn-outline" style="width:100%" onclick="closeModal()">Fechar</button></div>`;}
+
+async function exportBackup(){
+  const backup={
+    exportedAt: new Date().toISOString(),
+    grupos: await fbGet('grupos'),
+    frentes: await fbGet('frentes'),
+    tasks: await fbGet('tasks'),
+    projetos: await fbGet('projetos'),
+    peso: await fbGet('peso'),
+    gordura: await fbGet('gordura'),
+    corpo: await fbGet('corpo'),
+    meta: await fbGet('meta'),
+  };
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`mylifeonhub-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  alert('✅ Backup exportado com sucesso!');
+}
 
 async function tryRecoverData(){
   // Tenta todas as chaves possíveis do localStorage antigo
