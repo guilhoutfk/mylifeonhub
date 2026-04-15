@@ -237,12 +237,18 @@ td input:focus,td select:focus{border-color:var(--green)}
           <button class="dropdown-item" onclick="closeDropdown();openModal('config')"><span class="dropdown-item-icon">🎨</span> Gerenciar frentes</button>
           <button class="dropdown-item" onclick="closeDropdown();setView('proj',document.querySelector('.bn[onclick*=proj]'))"><span class="dropdown-item-icon">📋</span> Gerenciar projetos</button>
           <div class="dropdown-divider"></div>
-          <button class="dropdown-item" onclick="closeDropdown()"><span class="dropdown-item-icon">🌐</span> Idioma</button>
-          <button class="dropdown-item" onclick="closeDropdown()"><span class="dropdown-item-icon">⭐</span> Assinatura</button>
+          <button class="dropdown-item" onclick="closeDropdown();openPerfil()"><span class="dropdown-item-icon">👤</span> Meu perfil</button>
         </div>
       </div>
       <img id="user-avatar" class="user-avatar" src="" style="display:none" onclick="openPerfil()" title="Meu perfil"/>
-      <button class="btn btn-sm btn-ghost" onclick="confirmLogout()" title="Sair" id="btn-sair" style="display:none">🚪</button>
+      <button onclick="confirmLogout()" title="Sair" id="btn-sair" style="display:none;background:transparent;border:none;cursor:pointer;padding:2px 4px;line-height:0">
+        <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="15" cy="15" r="15" fill="#E24B4A"/>
+          <path d="M17 9.5H21V20.5H17" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12.5 19L9 15L12.5 11" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="9" y1="15" x2="19" y2="15" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </button>
     </div>
   </div>
 </div>
@@ -398,6 +404,17 @@ function openPerfil(){
     <div class="card" style="margin:0 14px">
       <div style="font-size:12px;color:var(--text2);line-height:1.6">
         Conta vinculada via Google. Para alterar nome ou foto, acesse as configurações da sua conta Google.
+      </div>
+    </div>
+    <div style="padding:14px 14px 0">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:10px 0 6px">Preferências</div>
+      <div class="card" style="padding:0;overflow:hidden;margin-bottom:4px">
+        <button onclick="alert('Em breve!')" style="display:flex;align-items:center;gap:12px;padding:13px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-family:inherit;font-size:14px;color:var(--text);border-bottom:1px solid var(--border)">
+          <span>🌐</span><span style="flex:1;text-align:left">Idioma</span><span style="font-size:12px;color:var(--text3)">Português ›</span>
+        </button>
+        <button onclick="alert('Em breve!')" style="display:flex;align-items:center;gap:12px;padding:13px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-family:inherit;font-size:14px;color:var(--text)">
+          <span>⭐</span><span style="flex:1;text-align:left">Assinatura</span><span style="font-size:12px;color:var(--text3)">Grátis ›</span>
+        </button>
       </div>
     </div>
     <div style="padding:14px">
@@ -1311,7 +1328,7 @@ function saveTaskModal(){
 }
 
 // ── CONFIG ────────────────────────────────────────────────
-function renderConfigModal(c){c.innerHTML=`<h3>⚙️ Configurações</h3><div id="config-section"><div style="margin-bottom:16px"><button class="btn btn-outline" style="width:100%" onclick="renderGruposConfig()">🎨 Gerenciar frentes</button></div><button class="btn btn-outline" style="width:100%" onclick="closeModal()">Fechar</button></div>`;}
+function renderConfigModal(c){renderGruposConfig();}
 
 async function tryRecoverData(){
   // Tenta todas as chaves possíveis do localStorage antigo
