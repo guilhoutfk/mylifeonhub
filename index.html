@@ -838,9 +838,8 @@ function toggleTask(gid,tid){
     t.done=false;dismissToast();
   }
   saveTasks();renderMetrics();renderTabs();renderDash();
+  if(activeProjetoId)renderProjDetail(activeProjetoId);
 }
-
-function taskRowHtml(gid,t,showGrupo){
   const d=daysFrom(t.due);let dcls='dbadge',dtxt='';
   if(t.due&&!t.done){
     dtxt=fmtDate(t.due);
