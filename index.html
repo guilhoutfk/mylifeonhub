@@ -386,7 +386,13 @@ function toggleDropdown(e){
 function closeDropdown(){
   document.getElementById('dropdown-menu').classList.remove('open');
 }
-document.addEventListener('click',()=>closeDropdown());
+document.addEventListener('click',(e)=>{
+  const menu=document.getElementById('dropdown-menu');
+  const btn=document.getElementById('config-btn');
+  if(menu&&btn&&!menu.contains(e.target)&&!btn.contains(e.target)){
+    closeDropdown();
+  }
+});
 
 // ── PERFIL ────────────────────────────────────────────────
 function openPerfil(){
@@ -838,9 +844,8 @@ function toggleTask(gid,tid){
     t.done=false;dismissToast();
   }
   saveTasks();renderMetrics();renderTabs();renderDash();
+  if(activeProjetoId)renderProjDetail(activeProjetoId);
 }
-
-function taskRowHtml(gid,t,showGrupo){
   const d=daysFrom(t.due);let dcls='dbadge',dtxt='';
   if(t.due&&!t.done){
     dtxt=fmtDate(t.due);
