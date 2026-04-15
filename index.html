@@ -844,6 +844,7 @@ function toggleTask(gid,tid){
     t.done=false;dismissToast();
   }
   saveTasks();renderMetrics();renderTabs();renderDash();
+  if(activeProjetoId)renderProjDetail(activeProjetoId);
 }
 
 function taskRowHtml(gid,t,showGrupo){
