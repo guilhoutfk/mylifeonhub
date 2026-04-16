@@ -169,6 +169,17 @@ td input:focus,td select:focus{border-color:var(--green)}
 .field label{font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px}
 .field input,.field select,.field textarea{width:100%;font-size:14px;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-family:inherit;outline:none}
 .field input:focus,.field select:focus{border-color:var(--green)}
+/* Custom select frente */
+.custom-select{position:relative;width:100%}
+.custom-select-trigger{width:100%;font-size:14px;padding:8px 36px 8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-family:inherit;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;position:relative}
+.custom-select-trigger::after{content:'▾';position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:12px;pointer-events:none}
+.custom-select-trigger.open{border-color:var(--green)}
+.custom-select-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1.5px solid var(--green);border-radius:var(--radius-sm);box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:500;max-height:220px;overflow-y:auto;display:none}
+.custom-select-dropdown.open{display:block}
+.custom-select-option{padding:10px 12px;font-size:14px;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:8px;color:var(--text)}
+.custom-select-option:hover{background:var(--surface2)}
+.custom-select-option.selected{color:var(--green);font-weight:600}
+.custom-select-option.create-new{color:var(--green);font-weight:600;border-top:1px solid var(--border);margin-top:4px}
 .modal-btns{display:flex;gap:8px;margin-top:16px}
 .modal-btns button{flex:1}
 .frente-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
@@ -1248,11 +1259,25 @@ function renderTaskModal(c,gid,tid,preProjetoId){
   const rec=ed&&ed.recurrence?ed.recurrence:{active:false,period:'semanal',count:0};
   const selGid=ed?ed.grupoId:(gid&&gid!=='todas'?gid:'');
   const selPid=ed?ed.projetoId:(preProjetoId||'');
-  const gOpts=`<option value="">— Selecione a frente —</option>`+grupos.filter(g=>g.id!=='todas').map(g=>`<option value="${g.id}" ${selGid===g.id?'selected':''}>${g.icon} ${g.label}</option>`).join('');
   const projOpts=projetos.filter(p=>p.grupoId===selGid||p.grupo===selGid).map(p=>`<option value="${p.id}" ${selPid===p.id?'selected':''}>${p.nome}</option>`).join('');
+  // Monta opções do custom select de frentes
+  const gList=grupos.filter(g=>g.id!=='todas');
+  const selGrupo=gList.find(g=>g.id===selGid);
+  const triggerTxt=selGrupo?`${selGrupo.icon} ${selGrupo.label}`:'— Selecione a frente —';
+  const gOptsHtml=gList.map(g=>`<div class="custom-select-option${g.id===selGid?' selected':''}" onclick="pickGrupo('${g.id}','${g.icon} ${g.label}')">${g.icon} ${g.label}</div>`).join('');
+
   c.innerHTML=`<h3>${ed?'Editar tarefa':'Nova tarefa'}</h3>
     <div class="field"><label>Tarefa *</label><input id="m-text" value="${ed?ed.text||'':''}" placeholder="Descrição da tarefa"/></div>
-    <div class="field"><label>Frente *</label><select id="m-grupo" onchange="updateProjetoOpts()">${gOpts}</select></div>
+    <div class="field"><label>Frente *</label>
+      <div class="custom-select" id="cs-grupo">
+        <input type="hidden" id="m-grupo" value="${selGid}"/>
+        <div class="custom-select-trigger${selGid?' open':''}" id="cs-trigger" onclick="toggleCustomSelect()">${triggerTxt}</div>
+        <div class="custom-select-dropdown" id="cs-dropdown">
+          ${gOptsHtml}
+          <div class="custom-select-option create-new" onclick="openCreateFrente()">➕ Criar nova frente</div>
+        </div>
+      </div>
+    </div>
     <div class="field"><label>Projeto <span style="color:var(--text3);font-weight:400">(opcional)</span></label>
       <select id="m-projeto"><option value="">— Sem projeto —</option>${projOpts}</select>
     </div>
@@ -1292,10 +1317,31 @@ function renderTaskModal(c,gid,tid,preProjetoId){
   setTimeout(()=>document.getElementById('m-text').focus(),80);
 }
 
-function updateProjetoOpts(){
-  const gid=document.getElementById('m-grupo').value;
+function toggleCustomSelect(){
+  const trigger=document.getElementById('cs-trigger');
+  const dropdown=document.getElementById('cs-dropdown');
+  const isOpen=dropdown.classList.contains('open');
+  trigger.classList.toggle('open',!isOpen);
+  dropdown.classList.toggle('open',!isOpen);
+}
+
+function pickGrupo(gid,label){
+  document.getElementById('m-grupo').value=gid;
+  document.getElementById('cs-trigger').textContent=label;
+  document.getElementById('cs-trigger').classList.add('open');
+  document.getElementById('cs-dropdown').classList.remove('open');
+  // Atualiza projetos
   const projOpts=projetos.filter(p=>p.grupoId===gid||p.grupo===gid).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
   document.getElementById('m-projeto').innerHTML=`<option value="">— Sem projeto —</option>${projOpts}`;
+  // Marca selecionado
+  document.querySelectorAll('#cs-dropdown .custom-select-option').forEach(o=>{
+    o.classList.toggle('selected',o.textContent.trim()===label.trim());
+  });
+}
+
+function openCreateFrente(){
+  closeModal();
+  setTimeout(()=>openModal('config'),100);
 }
 function toggleRecFields(){document.getElementById('rec-fields').style.display=document.getElementById('m-rec-active').value==='1'?'block':'none';}
 function saveTaskModal(){
