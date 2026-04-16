@@ -92,8 +92,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .bar-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:3px}
 .bar-track{height:7px;background:var(--surface2);border-radius:4px;overflow:hidden;border:1px solid var(--border)}
 .bar-fill{height:100%;border-radius:4px;transition:width 0.5s}
-.peso-log{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-top:10px}
-.peso-log::-webkit-scrollbar{display:none}
+.peso-log{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-top:10px;scrollbar-width:thin;scrollbar-color:var(--green-dark) var(--surface2)}
+.peso-log::-webkit-scrollbar{height:4px}
+.peso-log::-webkit-scrollbar-track{background:var(--surface2)}
+.peso-log::-webkit-scrollbar-thumb{background:var(--green-dark);border-radius:2px}
 .pe{background:var(--surface2);border-radius:var(--radius-sm);padding:6px 8px;text-align:center;min-width:54px;flex-shrink:0}
 .pe-date{font-size:10px;color:var(--text2)}
 .pe-val{font-size:13px;font-weight:700}
@@ -146,7 +148,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .empty{text-align:center;padding:2rem;color:var(--text2);font-size:13px}
 .pdot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0}
 .plan-filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
-.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);scrollbar-width:thin;scrollbar-color:var(--green-dark) var(--surface2)}
+.table-wrap::-webkit-scrollbar{height:6px}
+.table-wrap::-webkit-scrollbar-track{background:var(--surface2)}
+.table-wrap::-webkit-scrollbar-thumb{background:var(--green-dark);border-radius:3px}
+.table-wrap::-webkit-scrollbar-thumb:hover{background:var(--green)}
 .table-wrap th:nth-child(2),.table-wrap td:nth-child(2){min-width:90px}
 .table-wrap th:nth-child(3),.table-wrap td:nth-child(3){min-width:90px}
 table{width:100%;border-collapse:collapse;font-size:12px;min-width:580px}
@@ -162,7 +168,11 @@ td input:focus,td select:focus{border-color:var(--green)}
 .action-btns{display:flex;gap:4px}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;align-items:flex-end;justify-content:center}
 .modal-bg.open{display:flex}
-.modal{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:20px;width:100%;max-width:500px;max-height:92vh;overflow-y:auto}
+.modal{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:20px;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--green-dark) var(--surface2)}
+.modal::-webkit-scrollbar{width:6px}
+.modal::-webkit-scrollbar-track{background:var(--surface2)}
+.modal::-webkit-scrollbar-thumb{background:var(--green-dark);border-radius:3px}
+.modal::-webkit-scrollbar-thumb:hover{background:var(--green)}
 .modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
 .modal h3{font-size:16px;font-weight:700;margin-bottom:16px}
 .field{margin-bottom:12px}
@@ -174,7 +184,11 @@ td input:focus,td select:focus{border-color:var(--green)}
 .custom-select-trigger{width:100%;font-size:14px;padding:8px 36px 8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-family:inherit;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;position:relative}
 .custom-select-trigger::after{content:'▾';position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:12px;pointer-events:none}
 .custom-select-trigger.open{border-color:var(--green)}
-.custom-select-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1.5px solid var(--green);border-radius:var(--radius-sm);box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:500;max-height:220px;overflow-y:auto;display:none}
+.custom-select-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1.5px solid var(--green);border-radius:var(--radius-sm);box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:500;max-height:220px;overflow-y:auto;display:none;scrollbar-width:thin;scrollbar-color:var(--green-dark) var(--surface2)}
+.custom-select-dropdown::-webkit-scrollbar{width:6px}
+.custom-select-dropdown::-webkit-scrollbar-track{background:var(--surface2);border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.custom-select-dropdown::-webkit-scrollbar-thumb{background:var(--green-dark);border-radius:3px}
+.custom-select-dropdown::-webkit-scrollbar-thumb:hover{background:var(--green)}
 .custom-select-dropdown.open{display:block}
 .custom-select-option{padding:10px 12px;font-size:14px;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:8px;color:var(--text)}
 .custom-select-option:hover{background:var(--surface2)}
@@ -1425,33 +1439,4 @@ async function tryRecoverData(){
   if(!confirm(`✅ Encontrei ${total} tarefas no backup local!\n\nDeseja restaurar esses dados? Isso vai substituir as frentes e tarefas atuais.`))return;
 
   // Restaura
-  // recovery simplified
-  tasks=foundTasks;await saveTasks();
-  closeModal();renderMetrics();renderTabs();renderDash();
-  alert('✅ Dados restaurados com sucesso!');
-}
-function renderGruposConfig(){
-  const c=document.getElementById('config-section'),ge=grupos.filter(g=>g.id!=='todas');
-  c.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><button class="btn btn-outline btn-sm" onclick="renderConfigModal(document.getElementById('modal-content'))">← Voltar</button><strong>Frentes</strong></div><div style="font-size:12px;color:var(--text2);margin-bottom:10px">A cor de cada frente é herdada por todos os seus subgrupos.</div><div>${ge.map(g=>`<div class="frente-item"><div class="color-swatch" style="background:${g.color}"></div><span style="font-size:14px;flex:1">${g.icon} ${g.label}</span><button class="btn btn-outline btn-xs" onclick="startEditGrupo('${g.id}')">Editar</button><button class="btn btn-outline btn-xs" onclick="deleteGrupo('${g.id}')">🗑️</button></div>`).join('')}</div><div class="section-sep" style="margin-top:14px">Nova frente</div><div class="field"><label>Nome</label><input id="ng-name" placeholder="Ex: Projetos"/></div><div class="field"><label>Ícone (emoji)</label><input id="ng-icon" placeholder="Ex: 🚀" maxlength="2"/></div><div class="field"><label>Cor</label><div style="display:flex;gap:6px;flex-wrap:wrap;padding:4px 0">${CORES.map((cor,i)=>`<div class="coloropt" onclick="selectColorGrupo('${cor}')" id="ngco-${i}" style="background:${cor};${i===0?'border-color:var(--text)':''}"></div>`).join('')}</div></div><button class="btn" style="width:100%;margin-bottom:8px" onclick="addGrupo()">+ Criar frente</button><button class="btn btn-outline" style="width:100%" onclick="closeModal()">Fechar</button>`;
-  selectedColor=CORES[0];
-}
-function startEditGrupo(gid){editingGrupoId=gid;const g=grupos.find(g=>g.id===gid);const c=document.getElementById('config-section');c.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><button class="btn btn-outline btn-sm" onclick="renderGruposConfig()">← Voltar</button><strong>Editar: ${g.label}</strong></div><div class="field"><label>Nome</label><input id="eg-name" value="${g.label}"/></div><div class="field"><label>Ícone</label><input id="eg-icon" value="${g.icon}" maxlength="2"/></div><div class="field"><label>Cor</label><div style="display:flex;gap:6px;flex-wrap:wrap;padding:4px 0">${CORES.map((cor,i)=>`<div class="coloropt" onclick="selectColorEdit('${cor}','eg')" id="egco-${i}" style="background:${cor};${cor===g.color?'border-color:var(--text)':''}"></div>`).join('')}</div></div><div class="modal-btns"><button class="btn btn-red" onclick="deleteGrupo('${gid}')">Excluir</button><button class="btn" onclick="saveGrupo()">Salvar</button></div>`;selectedColor=g.color;}
-function selectColorEdit(cor,p){selectedColor=cor;document.querySelectorAll(`[id^="${p}co-"]`).forEach((el,i)=>{el.style.borderColor=CORES[i]===cor?'var(--text)':'transparent';});}
-function selectColorGrupo(cor){selectColorEdit(cor,'ngco');}
-function addGrupo(){const name=(document.getElementById('ng-name').value||'').trim(),icon=(document.getElementById('ng-icon').value||'📌').trim();if(!name){alert('Digite o nome');return;}grupos.push({id:'g'+uid(),label:name,icon,color:selectedColor});saveGrupos();renderGruposConfig();renderTabs();renderDash();}
-function saveGrupo(){const g=grupos.find(g=>g.id===editingGrupoId);if(!g)return;g.label=(document.getElementById('eg-name').value||g.label).trim();g.icon=(document.getElementById('eg-icon').value||g.icon).trim();g.color=selectedColor;saveGrupos();renderGruposConfig();renderTabs();renderDash();if(activeView==='plan')renderPlan();}
-function deleteGrupo(gid){
-  const tot=(tasks[gid]||[]).length;
-  const projCount=projetos.filter(p=>p.grupoId===gid||p.grupo===gid).length;
-  if(!confirm(`Excluir esta frente?${tot>0?`\n\n${tot} tarefa(s) serão perdidas.`:''}${projCount>0?`\n${projCount} projeto(s) serão removidos.`:''}`))return;
-  projetos=projetos.filter(p=>(p.grupoId||p.grupo)!==gid);
-  delete tasks[gid];
-  grupos=grupos.filter(g=>g.id!==gid);
-  saveGrupos();saveTasks();saveProjetos();
-  renderGruposConfig();renderTabs();renderDash();
-}
-
-
-</script>
-</body>
-</html>
+  /
