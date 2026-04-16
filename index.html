@@ -1335,7 +1335,10 @@ function saveTaskModal(){
 }
 
 // ── CONFIG ────────────────────────────────────────────────
-function renderConfigModal(c){renderGruposConfig();}
+function renderConfigModal(c){
+  c.innerHTML=`<div id="config-section"></div>`;
+  renderGruposConfig();
+}
 
 async function tryRecoverData(){
   // Tenta todas as chaves possíveis do localStorage antigo
