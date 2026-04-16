@@ -397,12 +397,58 @@ function toggleDropdown(e){
 function closeDropdown(){
   document.getElementById('dropdown-menu').classList.remove('open');
 }
+
+// ── CUSTOM SELECT GENÉRICO ────────────────────────────────
+window._csCallbacks={};
+
+function buildCustomSelect({id,opts,selected='',placeholder='— Selecione —',onChange,allowCreate=false,createLabel='➕ Criar nova frente',onCreateClick=null}){
+  const selOpt=opts.find(o=>o.value===selected);
+  const triggerTxt=selOpt?selOpt.label:placeholder;
+  const optsHtml=opts.map(o=>`<div class="custom-select-option${o.value===selected?' selected':''}" onclick="csPickOption('${id}','${o.value}',\`${o.label}\`)">${o.label}</div>`).join('');
+  const createHtml=allowCreate?`<div class="custom-select-option create-new" onclick="csCreate('${id}')">${createLabel}</div>`:'';
+  window._csCallbacks[id]={onChange,onCreateClick};
+  return `<div class="custom-select" id="cs-${id}">
+    <input type="hidden" id="${id}" value="${selected}"/>
+    <div class="custom-select-trigger" id="cs-trigger-${id}" onclick="csToggle('${id}')">${triggerTxt}</div>
+    <div class="custom-select-dropdown" id="cs-drop-${id}">${optsHtml}${createHtml}</div>
+  </div>`;
+}
+
+function csToggle(uid){
+  const trigger=document.getElementById('cs-trigger-'+uid);
+  const drop=document.getElementById('cs-drop-'+uid);
+  const isOpen=drop.classList.contains('open');
+  csCloseAll();
+  if(!isOpen){trigger.classList.add('open');drop.classList.add('open');}
+}
+
+function csPickOption(uid,value,label){
+  document.getElementById(uid).value=value;
+  const trigger=document.getElementById('cs-trigger-'+uid);
+  trigger.textContent=label;
+  document.getElementById('cs-drop-'+uid).classList.remove('open');
+  trigger.classList.remove('open');
+  document.querySelectorAll(`#cs-drop-${uid} .custom-select-option`).forEach(o=>{
+    o.classList.toggle('selected',o.dataset.val===value);
+  });
+  window._csCallbacks?.[uid]?.onChange?.(value,label);
+}
+
+function csCreate(uid){
+  csCloseAll();
+  window._csCallbacks?.[uid]?.onCreateClick?.();
+}
+
+function csCloseAll(){
+  document.querySelectorAll('.custom-select-dropdown.open').forEach(d=>d.classList.remove('open'));
+  document.querySelectorAll('.custom-select-trigger.open').forEach(t=>t.classList.remove('open'));
+}
+
 document.addEventListener('click',(e)=>{
+  if(!e.target.closest('.custom-select')) csCloseAll();
   const menu=document.getElementById('dropdown-menu');
   const btn=document.getElementById('config-btn');
-  if(menu&&btn&&!menu.contains(e.target)&&!btn.contains(e.target)){
-    closeDropdown();
-  }
+  if(menu&&btn&&!menu.contains(e.target)&&!btn.contains(e.target)) closeDropdown();
 });
 
 // ── PERFIL ────────────────────────────────────────────────
@@ -1216,10 +1262,11 @@ function openModal(mode,gid,tid,preProjetoId){
 
 function renderProjetoModal(c,pid){
   const ed=pid?projetos.find(p=>p.id===pid):null;
-  const gruposOpts=grupos.filter(g=>g.id!=='todas').map(g=>`<option value="${g.id}" ${ed&&(ed.grupoId||ed.grupo)===g.id?'selected':''}>${g.icon} ${g.label}</option>`).join('');
+  const selGrupo=ed?(ed.grupoId||ed.grupo):'';
+  const grupoOpts=grupos.filter(g=>g.id!=='todas').map(g=>({value:g.id,label:`${g.icon} ${g.label}`}));
   c.innerHTML=`<h3>${ed?'Editar projeto':'Novo projeto'}</h3>
     <div class="field"><label>Nome do projeto *</label><input id="pj-nome" value="${ed?ed.nome:''}" placeholder="Ex: Festa de aniversário"/></div>
-    <div class="field"><label>Frente *</label><select id="pj-grupo"><option value="">— Selecione —</option>${gruposOpts}</select></div>
+    <div class="field"><label>Frente *</label>${buildCustomSelect({id:'pj-grupo',opts:grupoOpts,selected:selGrupo,placeholder:'— Selecione —'})}</div>
     <div class="field"><label>Data final</label><input type="date" id="pj-data" value="${ed&&ed.dataFim?ed.dataFim:''}"/></div>
     <div class="field"><label>Descrição</label><input id="pj-desc" value="${ed?ed.descricao||'':''}" placeholder="Opcional"/></div>
     <div class="modal-btns">
@@ -1259,54 +1306,24 @@ function renderTaskModal(c,gid,tid,preProjetoId){
   const rec=ed&&ed.recurrence?ed.recurrence:{active:false,period:'semanal',count:0};
   const selGid=ed?ed.grupoId:(gid&&gid!=='todas'?gid:'');
   const selPid=ed?ed.projetoId:(preProjetoId||'');
-  const projOpts=projetos.filter(p=>p.grupoId===selGid||p.grupo===selGid).map(p=>`<option value="${p.id}" ${selPid===p.id?'selected':''}>${p.nome}</option>`).join('');
-  // Monta opções do custom select de frentes
-  const gList=grupos.filter(g=>g.id!=='todas');
-  const selGrupo=gList.find(g=>g.id===selGid);
-  const triggerTxt=selGrupo?`${selGrupo.icon} ${selGrupo.label}`:'— Selecione a frente —';
-  const gOptsHtml=gList.map(g=>`<div class="custom-select-option${g.id===selGid?' selected':''}" onclick="pickGrupo('${g.id}','${g.icon} ${g.label}')">${g.icon} ${g.label}</div>`).join('');
+
+  const grupoOpts=grupos.filter(g=>g.id!=='todas').map(g=>({value:g.id,label:`${g.icon} ${g.label}`}));
+  const projOpts=projetos.filter(p=>p.grupoId===selGid||p.grupo===selGid).map(p=>({value:p.id,label:p.nome}));
+  const prioOpts=[{value:'',label:'— Selecione a prioridade —'},{value:'alta',label:'🔴 Alta'},{value:'media',label:'🟡 Média'},{value:'baixa',label:'🟢 Baixa'}];
+  const recOpts=[{value:'0',label:'Não repetir'},{value:'1',label:'Sim, repetir'}];
+  const periodOpts=[{value:'diario',label:'Diário'},{value:'semanal',label:'Semanal'},{value:'quinzenal',label:'Quinzenal'},{value:'mensal',label:'Mensal'}];
 
   c.innerHTML=`<h3>${ed?'Editar tarefa':'Nova tarefa'}</h3>
     <div class="field"><label>Tarefa *</label><input id="m-text" value="${ed?ed.text||'':''}" placeholder="Descrição da tarefa"/></div>
-    <div class="field"><label>Frente *</label>
-      <div class="custom-select" id="cs-grupo">
-        <input type="hidden" id="m-grupo" value="${selGid}"/>
-        <div class="custom-select-trigger${selGid?' open':''}" id="cs-trigger" onclick="toggleCustomSelect()">${triggerTxt}</div>
-        <div class="custom-select-dropdown" id="cs-dropdown">
-          ${gOptsHtml}
-          <div class="custom-select-option create-new" onclick="openCreateFrente()">➕ Criar nova frente</div>
-        </div>
-      </div>
-    </div>
-    <div class="field"><label>Projeto <span style="color:var(--text3);font-weight:400">(opcional)</span></label>
-      <select id="m-projeto"><option value="">— Sem projeto —</option>${projOpts}</select>
-    </div>
-    <div class="field"><label>Prioridade *</label>
-      <select id="m-p">
-        <option value="">— Selecione a prioridade —</option>
-        <option value="alta" ${ed&&ed.p==='alta'?'selected':''}>🔴 Alta</option>
-        <option value="media" ${ed&&ed.p==='media'?'selected':''}>🟡 Média</option>
-        <option value="baixa" ${ed&&ed.p==='baixa'?'selected':''}>🟢 Baixa</option>
-      </select>
-    </div>
+    <div class="field"><label>Frente *</label>${buildCustomSelect({id:'m-grupo',opts:grupoOpts,selected:selGid,placeholder:'— Selecione a frente —',allowCreate:true,onCreateClick:()=>{closeModal();setTimeout(()=>openModal('config'),100);},onChange:(v)=>{const po=projetos.filter(p=>p.grupoId===v||p.grupo===v).map(p=>({value:p.id,label:p.nome}));const wrap=document.getElementById('cs-m-projeto');if(wrap)wrap.outerHTML=buildCustomSelect({id:'m-projeto',opts:po,selected:'',placeholder:'— Sem projeto —'});}})}</div>
+    <div class="field"><label>Projeto <span style="color:var(--text3);font-weight:400">(opcional)</span></label>${buildCustomSelect({id:'m-projeto',opts:projOpts,selected:selPid,placeholder:'— Sem projeto —'})}</div>
+    <div class="field"><label>Prioridade *</label>${buildCustomSelect({id:'m-p',opts:prioOpts,selected:ed?ed.p:'',placeholder:'— Selecione a prioridade —'})}</div>
     <div class="field"><label>Data de vencimento</label><input type="date" id="m-due" value="${ed&&ed.due?ed.due:''}"/></div>
     <div class="field"><label>Nota</label><input id="m-note" value="${ed?ed.note||'':''}" placeholder="Opcional"/></div>
-    <div class="field"><label>Repetir tarefa?</label>
-      <select id="m-rec-active" onchange="toggleRecFields()">
-        <option value="0" ${!rec.active?'selected':''}>Não repetir</option>
-        <option value="1" ${rec.active?'selected':''}>Sim, repetir</option>
-      </select>
-    </div>
+    <div class="field"><label>Repetir tarefa?</label>${buildCustomSelect({id:'m-rec-active',opts:recOpts,selected:rec.active?'1':'0',onChange:(v)=>{document.getElementById('rec-fields').style.display=v==='1'?'block':'none';}})}</div>
     <div id="rec-fields" style="display:${rec.active?'block':'none'}">
       <div class="recurrence-box">
-        <div class="field" style="margin-bottom:8px"><label>Período</label>
-          <select id="m-rec-period">
-            <option value="diario" ${rec.period==='diario'?'selected':''}>Diário</option>
-            <option value="semanal" ${rec.period==='semanal'?'selected':''}>Semanal</option>
-            <option value="quinzenal" ${rec.period==='quinzenal'?'selected':''}>Quinzenal</option>
-            <option value="mensal" ${rec.period==='mensal'?'selected':''}>Mensal</option>
-          </select>
-        </div>
+        <div class="field" style="margin-bottom:8px"><label>Período</label>${buildCustomSelect({id:'m-rec-period',opts:periodOpts,selected:rec.period||'semanal'})}</div>
         <div style="font-size:12px;color:var(--text2)">Ao concluir, a tarefa avança automaticamente para a próxima data.</div>
       </div>
     </div>
@@ -1317,31 +1334,7 @@ function renderTaskModal(c,gid,tid,preProjetoId){
   setTimeout(()=>document.getElementById('m-text').focus(),80);
 }
 
-function toggleCustomSelect(){
-  const trigger=document.getElementById('cs-trigger');
-  const dropdown=document.getElementById('cs-dropdown');
-  const isOpen=dropdown.classList.contains('open');
-  trigger.classList.toggle('open',!isOpen);
-  dropdown.classList.toggle('open',!isOpen);
-}
-
-function pickGrupo(gid,label){
-  document.getElementById('m-grupo').value=gid;
-  document.getElementById('cs-trigger').textContent=label;
-  document.getElementById('cs-trigger').classList.add('open');
-  document.getElementById('cs-dropdown').classList.remove('open');
-  // Atualiza projetos
-  const projOpts=projetos.filter(p=>p.grupoId===gid||p.grupo===gid).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
-  document.getElementById('m-projeto').innerHTML=`<option value="">— Sem projeto —</option>${projOpts}`;
-  // Marca selecionado
-  document.querySelectorAll('#cs-dropdown .custom-select-option').forEach(o=>{
-    o.classList.toggle('selected',o.textContent.trim()===label.trim());
-  });
-}
-
-function openCreateFrente(){
-  closeModal();
-  setTimeout(()=>openModal('config'),100);
+function toggleRecFields(){document.getElementById('rec-fields').style.display=document.getElementById('m-rec-active').value==='1'?'block':'none';}
 }
 function toggleRecFields(){document.getElementById('rec-fields').style.display=document.getElementById('m-rec-active').value==='1'?'block':'none';}
 function saveTaskModal(){
