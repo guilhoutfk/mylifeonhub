@@ -41,24 +41,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ob-s4-word{display:block;font-family:'DM Serif Display',serif;font-size:28px;color:#111;text-align:center;opacity:0;transform:translateY(24px);transition:opacity 0.4s ease,transform 0.4s ease}
 .ob-s4-word.sm{font-family:'DM Sans',sans-serif;font-size:15px;font-weight:300;color:#6b7280;margin-top:6px}
 .ob-s4-word.in{opacity:1;transform:translateY(0)}
-.ob-grid{padding:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1}
-.ob-fc{border:2px solid #e5e7eb;border-radius:16px;padding:18px 10px;text-align:center;opacity:0;transform:translateY(40px);transition:opacity 0.4s ease,transform 0.4s ease,border-color 0.2s,background 0.2s;cursor:pointer;background:#fff}
+.ob-grid{padding:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1;max-width:420px;width:100%;margin:0 auto}
+.ob-fc{border:2px solid #e5e7eb;border-radius:22px;padding:22px 12px 18px;text-align:center;opacity:0;transform:translateY(40px);transition:opacity 0.4s ease,transform 0.4s ease,border-color 0.25s,background 0.25s,box-shadow 0.25s;cursor:pointer;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.ob-fc:active{transform:scale(0.97)}
 .ob-fc.up{opacity:1;transform:translateY(0)}
-.ob-fc.sel{border-color:#1D9E75;background:#E1F5EE}
-.ob-fc .ob-ic{font-size:28px;margin-bottom:8px;display:block}
-.ob-fc .ob-nm{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:#111}
+.ob-fc.sel{border-color:#1D9E75;background:linear-gradient(135deg,#E8FBF4,#D4F5E9);box-shadow:0 4px 16px rgba(29,158,117,0.15)}
+.ob-fc .ob-ic{font-size:32px;margin-bottom:10px;display:block;line-height:1}
+.ob-fc .ob-nm{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:#374151;letter-spacing:0.1px}
 .ob-fc.sel .ob-nm{color:#0F6E56}
 .ob-fc-full{grid-column:1/-1;max-width:160px;margin:0 auto;width:100%}
 .ob-s4-info{padding:12px 20px 28px;text-align:center;font-family:'DM Sans',sans-serif;font-size:13px;color:#9ca3af;opacity:0;transition:opacity 0.3s}
 .ob-s4-info.in{opacity:1}
 .ob-s4-info b{color:#1D9E75}
 /* S5 — spotlight sobre o app real */
+#ob-overlay.spotlight-mode{background:transparent}
 #ob-s5{background:transparent;cursor:default;padding:0;align-items:stretch;justify-content:flex-start}
-.ob-sp-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background 0.4s;pointer-events:none;z-index:1}
-.ob-sp-overlay.dark{background:rgba(0,0,0,0.72)}
-.ob-sp-cut{position:absolute;border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,0.72);transition:all 0.5s cubic-bezier(.4,0,.2,1);opacity:0;pointer-events:none;z-index:2}
+.ob-sp-overlay{position:fixed;inset:0;background:rgba(0,0,0,0);transition:background 0.4s;pointer-events:none;z-index:9001}
+.ob-sp-overlay.dark{background:rgba(0,0,0,0.75)}
+.ob-sp-cut{position:fixed;border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,0.75);transition:all 0.5s cubic-bezier(.4,0,.2,1);opacity:0;pointer-events:none;z-index:9002}
 .ob-sp-cut.in{opacity:1}
-.ob-balloon{position:absolute;background:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 8px 32px rgba(0,0,0,0.2);max-width:280px;z-index:20;opacity:0;transform:translateY(8px);transition:opacity 0.35s ease 0.35s,transform 0.35s ease 0.35s;pointer-events:none}
+.ob-balloon{position:fixed;background:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 8px 32px rgba(0,0,0,0.2);max-width:min(280px,calc(100vw - 24px));z-index:9003;opacity:0;transform:translateY(8px);transition:opacity 0.35s ease 0.35s,transform 0.35s ease 0.35s;pointer-events:none}
 .ob-balloon.in{opacity:1;transform:translateY(0);pointer-events:all}
 .ob-balloon::after{content:'';position:absolute;width:12px;height:12px;background:#fff;transform:rotate(45deg)}
 .ob-bal-top-r::after{top:-6px;right:20px}
@@ -442,17 +444,17 @@ td input:focus,td select:focus{border-color:var(--green)}
 
   <!-- S3 -->
   <div class="ob-screen" id="ob-s3">
-    <span class="ob-word" id="ob-w11">Escolha as frentes</span>
-    <span class="ob-word gr" id="ob-w12">que fazem parte</span>
-    <span class="ob-word" id="ob-w13">da sua vida agora</span>
+    <span class="ob-word" id="ob-w11">Vamos personalizar</span>
+    <span class="ob-word gr" id="ob-w12">seu espaço</span>
+    <span class="ob-word" id="ob-w13">de acordo com sua vida</span>
     <div class="ob-hint">toque para avançar</div>
   </div>
 
   <!-- S4 -->
   <div class="ob-screen" id="ob-s4">
     <div class="ob-s4-header">
-      <span class="ob-s4-word" id="ob-sw1">Quais frentes fazem parte da sua vida?</span>
-      <span class="ob-s4-word sm" id="ob-sw2">Selecione ao menos 3</span>
+      <span class="ob-s4-word" id="ob-sw1">Quais frentes fazem<br>parte da sua vida?</span>
+      <span class="ob-s4-word sm" id="ob-sw2">Selecione ao menos 3 para começar</span>
     </div>
     <div class="ob-grid">
       <div class="ob-fc" id="ob-fc0" onclick="obPickFrente(0,this)"><span class="ob-ic">❤️</span><span class="ob-nm">Saúde</span></div>
@@ -1723,8 +1725,6 @@ function obHandleClick(e){
   else if(obCur === 'ob-s2') obAdvance('ob-s3');
   else if(obCur === 'ob-s3') obAdvance('ob-s4');
   else if(obCur === 'ob-s4'){
-    if(!obS4Started){ obStartS4(); return; }
-    if(obCardShown < 5){ obShowNextCard(); return; }
     if(obS4Done) obConfirmFrente();
   }
 }
@@ -1734,7 +1734,28 @@ function obAdvance(next){
   obCur = next;
   document.getElementById(next).classList.add('ob-active');
   if(obTextScreens[next]) obAutoWords(obTextScreens[next]);
-  if(next === 'ob-s5') setTimeout(obStartSpotlight, 400);
+  if(next === 'ob-s4') obAutoS4();
+  if(next === 'ob-s5') {
+    document.getElementById('ob-overlay').classList.add('spotlight-mode');
+    setTimeout(obStartSpotlight, 400);
+  }
+}
+
+// Inicia S4 e mostra os cards automaticamente em cascata
+function obAutoS4(){
+  obS4Started = true;
+  setTimeout(() => document.getElementById('ob-sw1').classList.add('in'), 80);
+  setTimeout(() => document.getElementById('ob-sw2').classList.add('in'), 280);
+  setTimeout(() => document.getElementById('ob-s4info').classList.add('in'), 480);
+  // Cards sobem em cascata com delay crescente
+  const delays = [600, 750, 900, 1050, 1250];
+  delays.forEach((d, i) => {
+    setTimeout(() => {
+      const el = document.getElementById('ob-fc' + i);
+      if(el) el.classList.add('up');
+      obCardShown = i + 1;
+    }, d);
+  });
 }
 
 function obAutoWords({words, delays}){
@@ -1746,20 +1767,7 @@ function obAutoWords({words, delays}){
   });
 }
 
-// ── S4 — frentes ──
-function obStartS4(){
-  obS4Started = true;
-  setTimeout(() => document.getElementById('ob-sw1').classList.add('in'), 80);
-  setTimeout(() => document.getElementById('ob-sw2').classList.add('in'), 280);
-  setTimeout(() => document.getElementById('ob-s4info').classList.add('in'), 480);
-}
-
-function obShowNextCard(){
-  if(obCardShown >= 5) return;
-  const el = document.getElementById('ob-fc' + obCardShown);
-  if(el) setTimeout(() => el.classList.add('up'), 30);
-  obCardShown++;
-}
+// ── S4 — frentes (animação automática via obAutoS4) ──
 
 function obPickFrente(i, el){
   const id = obFrentesData[i].id;
@@ -1832,36 +1840,30 @@ function obShowSpot(i){
   const targetEl = spot.getEl ? spot.getEl() : document.getElementById(spot.elId);
   if(!targetEl){ obNextSpot(); return; }
 
-  const overlay = document.getElementById('ob-overlay');
-  const oR = overlay.getBoundingClientRect();
+  // position:fixed — usa coords diretas do viewport
   const eR = targetEl.getBoundingClientRect();
   const pad = 10;
 
   const cut = document.getElementById('ob-sp-cut');
-  cut.style.top    = (eR.top  - oR.top  - pad) + 'px';
-  cut.style.left   = (eR.left - oR.left - pad) + 'px';
+  cut.style.top    = (eR.top    - pad) + 'px';
+  cut.style.left   = (eR.left   - pad) + 'px';
   cut.style.width  = (eR.width  + pad * 2) + 'px';
   cut.style.height = (eR.height + pad * 2) + 'px';
   cut.classList.add('in');
 
-  // Posiciona balão abaixo do spotlight
+  // Posiciona balão abaixo do recorte
   const bal = document.getElementById(spot.bal);
-  const cutTop = parseFloat(cut.style.top);
-  const cutLeft = parseFloat(cut.style.left);
-  const cutH = parseFloat(cut.style.height);
-  const cutW = parseFloat(cut.style.width);
-  const balW = 280;
+  const balTop = eR.bottom + pad + 14;
 
-  bal.style.top = (cutTop + cutH + 20) + 'px';
+  bal.style.top = balTop + 'px';
   if(spot.balPos === 'top-r'){
     bal.style.right = '12px';
-    bal.style.left = 'auto';
+    bal.style.left  = 'auto';
   } else {
-    bal.style.left = Math.max(12, cutLeft) + 'px';
+    bal.style.left  = Math.max(12, eR.left - pad) + 'px';
     bal.style.right = 'auto';
   }
 
-  // Esconde todos, mostra o atual
   ['ob-bal1','ob-bal2','ob-bal3'].forEach(b => document.getElementById(b).classList.remove('in'));
   setTimeout(() => bal.classList.add('in'), 300);
 }
@@ -1873,7 +1875,10 @@ function obNextSpot(){
   } else {
     document.getElementById('ob-sp-cut').classList.remove('in');
     document.getElementById('ob-sp-overlay').classList.remove('dark');
-    setTimeout(() => obAdvance('ob-s6'), 500);
+    setTimeout(() => {
+      document.getElementById('ob-overlay').classList.remove('spotlight-mode');
+      obAdvance('ob-s6');
+    }, 500);
   }
 }
 
