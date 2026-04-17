@@ -23,6 +23,57 @@
   --radius:12px;--radius-sm:8px;--shadow:0 1px 4px rgba(0,0,0,0.07);
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:72px}
+/* ── ONBOARDING ───────────────────────────────────────────── */
+#ob-overlay{position:fixed;inset:0;z-index:9000;background:#fff;display:none;flex-direction:column;overflow:hidden}
+#ob-overlay.active{display:flex}
+.ob-screen{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity 0.5s ease;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 44px;cursor:pointer;background:#fff}
+.ob-screen.ob-active{opacity:1;pointer-events:all}
+.ob-word{display:block;font-family:'DM Serif Display',serif;font-size:38px;line-height:1.1;color:#111;text-align:center;opacity:0;transform:translateY(28px);transition:opacity 0.45s ease,transform 0.45s ease}
+.ob-word.sm{font-family:'DM Sans',sans-serif;font-size:17px;font-weight:300;color:#6b7280;line-height:1.5}
+.ob-word.gr{color:#1D9E75}
+.ob-word.gap{margin-top:14px}
+.ob-word.in{opacity:1;transform:translateY(0)}
+.ob-hint{position:absolute;bottom:36px;font-family:'DM Sans',sans-serif;font-size:11px;color:#d1d5db;letter-spacing:1.5px;text-transform:uppercase;animation:ob-blink 2.2s ease-in-out infinite}
+@keyframes ob-blink{0%,100%{opacity:0.3}50%{opacity:1}}
+/* S4 — frentes */
+#ob-s4{background:#fff;cursor:default;align-items:stretch;padding:0;justify-content:flex-start}
+.ob-s4-header{padding:52px 32px 20px;text-align:center}
+.ob-s4-word{display:block;font-family:'DM Serif Display',serif;font-size:28px;color:#111;text-align:center;opacity:0;transform:translateY(24px);transition:opacity 0.4s ease,transform 0.4s ease}
+.ob-s4-word.sm{font-family:'DM Sans',sans-serif;font-size:15px;font-weight:300;color:#6b7280;margin-top:6px}
+.ob-s4-word.in{opacity:1;transform:translateY(0)}
+.ob-grid{padding:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1}
+.ob-fc{border:2px solid #e5e7eb;border-radius:16px;padding:18px 10px;text-align:center;opacity:0;transform:translateY(40px);transition:opacity 0.4s ease,transform 0.4s ease,border-color 0.2s,background 0.2s;cursor:pointer;background:#fff}
+.ob-fc.up{opacity:1;transform:translateY(0)}
+.ob-fc.sel{border-color:#1D9E75;background:#E1F5EE}
+.ob-fc .ob-ic{font-size:28px;margin-bottom:8px;display:block}
+.ob-fc .ob-nm{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:#111}
+.ob-fc.sel .ob-nm{color:#0F6E56}
+.ob-fc-full{grid-column:1/-1;max-width:160px;margin:0 auto;width:100%}
+.ob-s4-info{padding:12px 20px 28px;text-align:center;font-family:'DM Sans',sans-serif;font-size:13px;color:#9ca3af;opacity:0;transition:opacity 0.3s}
+.ob-s4-info.in{opacity:1}
+.ob-s4-info b{color:#1D9E75}
+/* S5 — spotlight sobre o app real */
+#ob-s5{background:transparent;cursor:default;padding:0;align-items:stretch;justify-content:flex-start}
+.ob-sp-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background 0.4s;pointer-events:none;z-index:1}
+.ob-sp-overlay.dark{background:rgba(0,0,0,0.72)}
+.ob-sp-cut{position:absolute;border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,0.72);transition:all 0.5s cubic-bezier(.4,0,.2,1);opacity:0;pointer-events:none;z-index:2}
+.ob-sp-cut.in{opacity:1}
+.ob-balloon{position:absolute;background:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 8px 32px rgba(0,0,0,0.2);max-width:280px;z-index:20;opacity:0;transform:translateY(8px);transition:opacity 0.35s ease 0.35s,transform 0.35s ease 0.35s;pointer-events:none}
+.ob-balloon.in{opacity:1;transform:translateY(0);pointer-events:all}
+.ob-balloon::after{content:'';position:absolute;width:12px;height:12px;background:#fff;transform:rotate(45deg)}
+.ob-bal-top-r::after{top:-6px;right:20px}
+.ob-bal-top::after{top:-6px;left:20px}
+.ob-bal-title{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;color:#111;margin-bottom:4px}
+.ob-bal-sub{font-family:'DM Sans',sans-serif;font-size:12px;color:#6b7280;line-height:1.5}
+.ob-bal-next{margin-top:10px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:#1D9E75;cursor:pointer;display:inline-block}
+/* S6 — fim */
+#ob-s6{background:linear-gradient(160deg,#0F6E56,#1D9E75);cursor:pointer}
+.ob-s6-ic{font-size:64px;margin-bottom:24px;animation:ob-pop 0.5s cubic-bezier(.4,0,.2,1)}
+@keyframes ob-pop{0%{transform:scale(0.4);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+.ob-s6-title{font-family:'DM Serif Display',serif;font-size:32px;color:#fff;text-align:center;margin-bottom:12px;line-height:1.2}
+.ob-s6-sub{font-family:'DM Sans',sans-serif;font-size:15px;color:rgba(255,255,255,0.82);text-align:center;line-height:1.6;max-width:280px;margin-bottom:40px}
+.ob-s6-btn{background:#fff;color:#0F6E56;border:none;border-radius:14px;padding:16px 48px;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;cursor:pointer}
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,600&display=swap');
 /* LOGIN */
 #login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;background:linear-gradient(135deg,#0F6E56,#1D9E75)}
 .login-card{background:white;border-radius:20px;padding:2.5rem 2rem;width:100%;max-width:360px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.15)}
@@ -365,6 +416,85 @@ td input:focus,td select:focus{border-color:var(--green)}
 </div>
 </div><!-- /app-root -->
 
+<!-- ══ ONBOARDING OVERLAY ══════════════════════════════════ -->
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,600&display=swap" rel="stylesheet">
+<div id="ob-overlay">
+
+  <!-- S1 -->
+  <div class="ob-screen ob-active" id="ob-s1">
+    <span class="ob-word gr" id="ob-w1">Olá!</span>
+    <span class="ob-word" id="ob-w2">Bem-vindo(a) ao</span>
+    <span class="ob-word gr" id="ob-w3">My Life on Hub</span>
+    <span class="ob-word sm gap" id="ob-w4">Seu app</span>
+    <span class="ob-word sm" id="ob-w5">de organização pessoal</span>
+    <div class="ob-hint">toque para avançar</div>
+  </div>
+
+  <!-- S2 -->
+  <div class="ob-screen" id="ob-s2">
+    <span class="ob-word" id="ob-w6">Organize suas tarefas</span>
+    <span class="ob-word" id="ob-w7">em diferentes</span>
+    <span class="ob-word gr" id="ob-w8">frentes da vida</span>
+    <span class="ob-word sm gap" id="ob-w9">como Trabalho, Saúde</span>
+    <span class="ob-word sm" id="ob-w10">e Finanças</span>
+    <div class="ob-hint">toque para avançar</div>
+  </div>
+
+  <!-- S3 -->
+  <div class="ob-screen" id="ob-s3">
+    <span class="ob-word" id="ob-w11">Escolha as frentes</span>
+    <span class="ob-word gr" id="ob-w12">que fazem parte</span>
+    <span class="ob-word" id="ob-w13">da sua vida agora</span>
+    <div class="ob-hint">toque para avançar</div>
+  </div>
+
+  <!-- S4 -->
+  <div class="ob-screen" id="ob-s4">
+    <div class="ob-s4-header">
+      <span class="ob-s4-word" id="ob-sw1">Quais frentes fazem parte da sua vida?</span>
+      <span class="ob-s4-word sm" id="ob-sw2">Selecione ao menos 3</span>
+    </div>
+    <div class="ob-grid">
+      <div class="ob-fc" id="ob-fc0" onclick="obPickFrente(0,this)"><span class="ob-ic">❤️</span><span class="ob-nm">Saúde</span></div>
+      <div class="ob-fc" id="ob-fc1" onclick="obPickFrente(1,this)"><span class="ob-ic">💼</span><span class="ob-nm">Trabalho</span></div>
+      <div class="ob-fc" id="ob-fc2" onclick="obPickFrente(2,this)"><span class="ob-ic">👨‍👩‍👧</span><span class="ob-nm">Família</span></div>
+      <div class="ob-fc" id="ob-fc3" onclick="obPickFrente(3,this)"><span class="ob-ic">💰</span><span class="ob-nm">Finanças</span></div>
+      <div class="ob-fc ob-fc-full" id="ob-fc4" onclick="obPickFrente(4,this)"><span class="ob-ic">🚀</span><span class="ob-nm">Desenvolvimento Pessoal</span></div>
+    </div>
+    <div class="ob-s4-info" id="ob-s4info">Selecione pelo menos <b>3 frentes</b></div>
+  </div>
+
+  <!-- S5 -->
+  <div class="ob-screen" id="ob-s5">
+    <div class="ob-sp-overlay" id="ob-sp-overlay"></div>
+    <div class="ob-sp-cut" id="ob-sp-cut"></div>
+    <div class="ob-balloon ob-bal-top-r" id="ob-bal1">
+      <div class="ob-bal-title">✨ Crie sua primeira tarefa</div>
+      <div class="ob-bal-sub">Toque em <strong>+ Tarefa</strong> para registrar algo que está na sua cabeça agora.</div>
+      <span class="ob-bal-next" onclick="obNextSpot()">Próximo →</span>
+    </div>
+    <div class="ob-balloon ob-bal-top" id="ob-bal2">
+      <div class="ob-bal-title">🗂️ Suas frentes</div>
+      <div class="ob-bal-sub">Navegue entre as frentes que você escolheu e foque no que importa agora.</div>
+      <span class="ob-bal-next" onclick="obNextSpot()">Próximo →</span>
+    </div>
+    <div class="ob-balloon ob-bal-top-r" id="ob-bal3">
+      <div class="ob-bal-title">⚙️ Gerencie suas frentes</div>
+      <div class="ob-bal-sub">Toque em <strong>⚙️</strong> para criar, editar ou adicionar novas frentes quando quiser.</div>
+      <span class="ob-bal-next" onclick="obNextSpot()">Entrar no app →</span>
+    </div>
+  </div>
+
+  <!-- S6 -->
+  <div class="ob-screen" id="ob-s6" onclick="obFinish()">
+    <div class="ob-s6-ic">🎉</div>
+    <div class="ob-s6-title">Tudo pronto!</div>
+    <div class="ob-s6-sub">Suas frentes estão criadas. Agora é só começar.</div>
+    <button class="ob-s6-btn">Entrar no app</button>
+  </div>
+
+</div><!-- /ob-overlay -->
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -680,6 +810,10 @@ async function initApp(user){
   document.getElementById('loading-screen').style.display='none';
   document.getElementById('app-root').style.display='block';
   renderMetrics();renderPesoCard();renderTabs();renderDash();
+
+  // ── Detectar primeiro acesso → onboarding ──
+  const onboardingDone = await fbGet('onboardingDone');
+  if(!onboardingDone){ obStart(); }
 }
 
 // ── VIEW ─────────────────────────────────────────────────
@@ -1546,6 +1680,216 @@ function deleteGrupo(gid){
   renderGruposConfig();renderTabs();renderDash();
 }
 
+
+// ══════════════════════════════════════════════════════════
+// ONBOARDING — lógica completa
+// ══════════════════════════════════════════════════════════
+const obTextScreens = {
+  'ob-s1': {words:['ob-w1','ob-w2','ob-w3','ob-w4','ob-w5'], delays:[0,220,440,680,860]},
+  'ob-s2': {words:['ob-w6','ob-w7','ob-w8','ob-w9','ob-w10'], delays:[0,220,440,680,860]},
+  'ob-s3': {words:['ob-w11','ob-w12','ob-w13'], delays:[0,220,440]},
+};
+
+let obCur = 'ob-s1';
+let obSpotIdx = 0;
+let obSelected = new Set();
+let obS4Started = false;
+let obCardShown = 0;
+let obS4Done = false;
+
+// Mapeamento frentes do onboarding → dados reais
+const obFrentesData = [
+  {id:'saude',   label:'Saúde',                   icon:'❤️', color:'#D4537E'},
+  {id:'trabalho',label:'Trabalho',                 icon:'💼', color:'#378ADD'},
+  {id:'familia', label:'Família',                  icon:'👨‍👩‍👧', color:'#BA7517'},
+  {id:'financas',label:'Finanças',                 icon:'💰', color:'#1D9E75'},
+  {id:'pessoal', label:'Desenvolvimento Pessoal',  icon:'🚀', color:'#7F77DD'},
+];
+
+function obStart(){
+  document.getElementById('ob-overlay').classList.add('active');
+  obAutoWords(obTextScreens['ob-s1']);
+
+  // Clique global no overlay para avançar telas de texto
+  document.getElementById('ob-overlay').addEventListener('click', obHandleClick);
+}
+
+function obHandleClick(e){
+  if(e.target.closest('.ob-fc')) return;
+  if(e.target.closest('.ob-bal-next')) return;
+  if(obCur === 'ob-s5' || obCur === 'ob-s6') return;
+
+  if(obCur === 'ob-s1') obAdvance('ob-s2');
+  else if(obCur === 'ob-s2') obAdvance('ob-s3');
+  else if(obCur === 'ob-s3') obAdvance('ob-s4');
+  else if(obCur === 'ob-s4'){
+    if(!obS4Started){ obStartS4(); return; }
+    if(obCardShown < 5){ obShowNextCard(); return; }
+    if(obS4Done) obConfirmFrente();
+  }
+}
+
+function obAdvance(next){
+  document.getElementById(obCur).classList.remove('ob-active');
+  obCur = next;
+  document.getElementById(next).classList.add('ob-active');
+  if(obTextScreens[next]) obAutoWords(obTextScreens[next]);
+  if(next === 'ob-s5') setTimeout(obStartSpotlight, 400);
+}
+
+function obAutoWords({words, delays}){
+  words.forEach((id, i) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if(el) el.classList.add('in');
+    }, delays[i]);
+  });
+}
+
+// ── S4 — frentes ──
+function obStartS4(){
+  obS4Started = true;
+  setTimeout(() => document.getElementById('ob-sw1').classList.add('in'), 80);
+  setTimeout(() => document.getElementById('ob-sw2').classList.add('in'), 280);
+  setTimeout(() => document.getElementById('ob-s4info').classList.add('in'), 480);
+}
+
+function obShowNextCard(){
+  if(obCardShown >= 5) return;
+  const el = document.getElementById('ob-fc' + obCardShown);
+  if(el) setTimeout(() => el.classList.add('up'), 30);
+  obCardShown++;
+}
+
+function obPickFrente(i, el){
+  const id = obFrentesData[i].id;
+  el.classList.toggle('sel');
+  if(obSelected.has(id)) obSelected.delete(id);
+  else obSelected.add(id);
+  const n = obSelected.size;
+  const info = document.getElementById('ob-s4info');
+  if(n >= 3){
+    info.innerHTML = '✓ Ótimo! Toque na tela para continuar';
+    info.style.color = '#1D9E75';
+    obS4Done = true;
+  } else {
+    info.innerHTML = 'Selecione pelo menos <b>3 frentes</b>';
+    info.style.color = '';
+    obS4Done = false;
+  }
+}
+
+// Cria as frentes selecionadas no Firestore
+async function obConfirmFrente(){
+  // Remove grupos padrão que NÃO foram selecionados (exceto 'todas')
+  const gruposParaManter = ['todas'];
+  obSelected.forEach(id => gruposParaManter.push(id));
+
+  // Filtra grupos — mantém 'todas' + selecionados + quaisquer customizados que já existam
+  const defaultIds = obFrentesData.map(f => f.id);
+  grupos = grupos.filter(g => {
+    if(g.id === 'todas') return true;
+    if(defaultIds.includes(g.id)) return obSelected.has(g.id); // default: só se selecionado
+    return true; // customizados: mantém sempre
+  });
+
+  // Garante que os selecionados existam (com dados corretos)
+  obFrentesData.forEach(fd => {
+    if(obSelected.has(fd.id)){
+      const existe = grupos.find(g => g.id === fd.id);
+      if(!existe) grupos.push({id: fd.id, label: fd.label, icon: fd.icon, color: fd.color});
+    }
+  });
+
+  // Garante tasks vazio para cada grupo novo
+  grupos.filter(g => g.id !== 'todas').forEach(g => {
+    if(!tasks[g.id]) tasks[g.id] = [];
+  });
+
+  await saveGrupos();
+  await saveTasks();
+  renderTabs();
+  renderDash();
+
+  obAdvance('ob-s5');
+}
+
+// ── S5 — Spotlight sobre elementos reais do app ──
+const obSpots = [
+  { elId: null, getEl: () => document.querySelector('.hdr-btns .btn.btn-ghost'), bal: 'ob-bal1', balPos: 'top-r' },
+  { elId: 'tabs',       getEl: () => document.getElementById('tabs'),      bal: 'ob-bal2', balPos: 'top' },
+  { elId: 'config-btn', getEl: () => document.getElementById('config-btn'), bal: 'ob-bal3', balPos: 'top-r' },
+];
+
+function obStartSpotlight(){
+  document.getElementById('ob-sp-overlay').classList.add('dark');
+  setTimeout(() => obShowSpot(0), 300);
+}
+
+function obShowSpot(i){
+  obSpotIdx = i;
+  const spot = obSpots[i];
+  const targetEl = spot.getEl ? spot.getEl() : document.getElementById(spot.elId);
+  if(!targetEl){ obNextSpot(); return; }
+
+  const overlay = document.getElementById('ob-overlay');
+  const oR = overlay.getBoundingClientRect();
+  const eR = targetEl.getBoundingClientRect();
+  const pad = 10;
+
+  const cut = document.getElementById('ob-sp-cut');
+  cut.style.top    = (eR.top  - oR.top  - pad) + 'px';
+  cut.style.left   = (eR.left - oR.left - pad) + 'px';
+  cut.style.width  = (eR.width  + pad * 2) + 'px';
+  cut.style.height = (eR.height + pad * 2) + 'px';
+  cut.classList.add('in');
+
+  // Posiciona balão abaixo do spotlight
+  const bal = document.getElementById(spot.bal);
+  const cutTop = parseFloat(cut.style.top);
+  const cutLeft = parseFloat(cut.style.left);
+  const cutH = parseFloat(cut.style.height);
+  const cutW = parseFloat(cut.style.width);
+  const balW = 280;
+
+  bal.style.top = (cutTop + cutH + 20) + 'px';
+  if(spot.balPos === 'top-r'){
+    bal.style.right = '12px';
+    bal.style.left = 'auto';
+  } else {
+    bal.style.left = Math.max(12, cutLeft) + 'px';
+    bal.style.right = 'auto';
+  }
+
+  // Esconde todos, mostra o atual
+  ['ob-bal1','ob-bal2','ob-bal3'].forEach(b => document.getElementById(b).classList.remove('in'));
+  setTimeout(() => bal.classList.add('in'), 300);
+}
+
+function obNextSpot(){
+  ['ob-bal1','ob-bal2','ob-bal3'].forEach(b => document.getElementById(b).classList.remove('in'));
+  if(obSpotIdx < obSpots.length - 1){
+    setTimeout(() => obShowSpot(obSpotIdx + 1), 250);
+  } else {
+    document.getElementById('ob-sp-cut').classList.remove('in');
+    document.getElementById('ob-sp-overlay').classList.remove('dark');
+    setTimeout(() => obAdvance('ob-s6'), 500);
+  }
+}
+
+// ── S6 — Finalizar ──
+async function obFinish(){
+  await fbSet('onboardingDone', true);
+  const overlay = document.getElementById('ob-overlay');
+  overlay.style.transition = 'opacity 0.5s ease';
+  overlay.style.opacity = '0';
+  setTimeout(() => {
+    overlay.classList.remove('active');
+    overlay.style.opacity = '';
+    overlay.style.transition = '';
+  }, 500);
+}
+// ══════════════════════════════════════════════════════════
 
 </script>
 </body>
