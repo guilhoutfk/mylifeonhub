@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>My Life on Hub — Bem-vindo</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
+:root{
+  --green:#1D9E75;
+  --green-dark:#0F6E56;
+  --green-light:#E1F5EE;
+  --green-text:#085041;
+  --border:#e5e7eb;
+  --text:#111827;
+  --text2:#6b7280;
+  --text3:#9ca3af;
+  --surface:#fff;
+  --surface2:#f1f3f5;
+  --radius:12px;
+  --radius-sm:8px;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  overflow: hidden;
+  background: #0F6E56;
+}
+
+/* ══════════════════════════════════════
+   SHELL — fundo gradiente, altura total
+══════════════════════════════════════ */
+#shell {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(150deg, #0b5c47 0%, #1D9E75 50%, #4dc99a 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── barra de progresso ── */
+#prog-bar {
+  height: 3px;
+  background: rgba(255,255,255,0.18);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+#prog-fill {
+  height: 100%;
+  background: white;
+  border-radius: 0 2px 2px 0;
+  transition: width .5s cubic-bezier(.4,0,.2,1);
+  width: 0%;
+}
+
+/* ── botão pular ── */
+#btn-skip {
+  position: absolute;
+  top: 14px; right: 16px;
+  z-index: 20;
+  background: rgba(0,0,0,.18);
+  border: none;
+  border-radius: 20px;
+  color: rgba(255,255,255,.75);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+#btn-skip:hover { background: rgba(0,0,0,.28); color: #fff; }
+
+/* ══════════════════════════════════════
+   ÁREA DE STEPS — cresce, centraliza
+══════════════════════════════════════ */
+#steps-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Cada step ocupa todo o espaço e centraliza o GRID */
+.step {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px 8px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(56px);
+  transition: opacity .42s cubic-bezier(.4,0,.2,1),
+              transform .42s cubic-bezier(.4,0,.2,1);
+}
+.step.active  { opacity: 1; transform: translateX(0); pointer-events: auto; }
+.step.exit    { opacity: 0; transform: translateX(-56px); }
+
+/* ══════════════════════════════════════
+   MOBILE: stack vertical simples
+══════════════════════════════════════ */
+.step-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.illo {
+  width: 88px; height: 88px;
+  border-radius: 22px;
+  background: rgba(255,255,255,.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 44px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.14);
+  flex-shrink: 0;
+}
+
+.copy { width: 100%; }
+.tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.55);
+  margin-bottom: 6px;
+}
+.headline {
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+  margin-bottom: 10px;
+}
+.body-text {
+  font-size: 15px;
+  color: rgba(255,255,255,.88);
+  line-height: 1.65;
+}
+.body-text b { color: #fff; }
+
+/* health pills */
+.health-pills {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.hpill {
+  flex: 1;
+  background: rgba(255,255,255,.13);
+  border-radius: 10px;
+  padding: 10px 6px;
+  text-align: center;
+}
+.hpill-icon { font-size: 20px; margin-bottom: 3px; }
+.hpill-label { font-size: 11px; color: rgba(255,255,255,.85); font-weight: 500; }
+
+/* card branco (formulários e confirmações) */
+.white-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 18px;
+  width: 100%;
+  box-shadow: 0 6px 28px rgba(0,0,0,.14);
+}
+.card-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.card-sub   { font-size: 13px; color: var(--text2); margin-bottom: 14px; line-height: 1.4; }
+
+/* task preview */
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+}
+.task-chk {
+  width: 18px; height: 18px;
+  border-radius: 5px;
+  border: 2px solid var(--green);
+  flex-shrink: 0;
+}
+.task-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.task-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+/* weight confirmation */
+.wt-row { display: flex; gap: 8px; }
+.wt-box {
+  flex: 1;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+.wt-val   { font-size: 20px; font-weight: 700; color: var(--text); }
+.wt-label { font-size: 10px; color: var(--text2); margin-top: 2px; }
+
+/* form inputs */
+.f-label {
+  display: block;
+  font-size: 12px; font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.f-inp {
+  display: block;
+  width: 100%;
+  font-size: 14px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+  margin-bottom: 10px;
+}
+.f-inp:focus { border-color: var(--green); }
+.f-inp::placeholder { color: var(--text3); }
+.f-row { margin-bottom: 2px; }
+
+/* custom select */
+.cs-wrap { position: relative; margin-bottom: 10px; }
+.cs-trig {
+  width: 100%;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 14px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  user-select: none;
+}
+.cs-trig.ph { color: var(--text3); }
+.cs-arr { font-size: 10px; color: var(--text3); transition: transform .2s; }
+.cs-drop {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px); left: 0; right: 0;
+  background: #fff;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  box-shadow: 0 4px 16px rgba(0,0,0,.1);
+  z-index: 50;
+  max-height: 170px;
+  overflow-y: auto;
+}
+.cs-drop.open { display: block; }
+.cs-opt {
+  padding: 9px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+.cs-opt:last-child { border-bottom: none; }
+.cs-opt:hover { background: var(--green-light); color: var(--green-text); }
+.cs-opt.sel { color: var(--green); font-weight: 600; }
+
+/* ══════════════════════════════════════
+   PC LAYOUT ≥ 768px
+   Grid de 3 colunas:
+   [illo 160px] [gap 40px] [conteúdo 440px] [gap 40px] [espelho vazio 160px]
+══════════════════════════════════════ */
+@media (min-width: 768px) {
+
+  .step { padding: 16px 0 4px; }
+
+  .step-body {
+    /* grid explícito de 3 áreas */
+    display: grid;
+    grid-template-columns: 160px 440px;
+    grid-template-rows: auto;
+    grid-template-areas: "illo copy";
+    align-items: center;
+    gap: 0 40px;
+    max-width: none;
+    width: auto;
+  }
+
+  /* steps com card: illo alinha ao topo */
+  .step-body.has-card {
+    align-items: start;
+    padding-top: 8px;
+  }
+
+  .illo {
+    grid-area: illo;
+    width: 160px; height: 160px;
+    border-radius: 32px;
+    font-size: 78px;
+    justify-self: center;
+  }
+  .step-body.has-card .illo {
+    width: 120px; height: 120px;
+    border-radius: 24px;
+    font-size: 58px;
+    margin-top: 6px;
+  }
+
+  .copy {
+    grid-area: copy;
+    width: 440px;
+    max-height: calc(100vh - 115px);
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .copy::-webkit-scrollbar { width: 3px; }
+  .copy::-webkit-scrollbar-thumb { background: rgba(255,255,255,.3); border-radius: 2px; }
+
+  /* step-5: sem scroll — compactar para caber na tela */
+  #s5 .copy { overflow-y: visible; max-height: none; }
+  #s5 .headline { font-size: 28px; margin-bottom: 6px; }
+  #s5 .body-text { font-size: 14px; line-height: 1.5; }
+  #s5 .white-card { padding: 12px; margin-top: 8px; }
+  #s5 .card-title { font-size: 14px; }
+  #s5 .card-sub { margin-bottom: 8px; font-size: 12px; }
+  #s5 .f-inp { padding: 7px 10px; font-size: 13px; margin-bottom: 6px; }
+  #s5 .f-label { font-size: 11px; margin-bottom: 2px; }
+  #s5 .f-row { margin-bottom: 0; }
+
+  .tag    { font-size: 11px; }
+  .headline { font-size: 36px; margin-bottom: 12px; }
+  .body-text { font-size: 16px; line-height: 1.7; }
+  .health-pills { margin-top: 16px; }
+  .white-card { margin-top: 14px; }
+}
+
+/* ══════════════════════════════════════
+   BOTTOM BAR
+   Mobile: centralizado
+   PC: alinha com a coluna copy (mesmo offset do grid)
+══════════════════════════════════════ */
+#bottom {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px 18px;
+}
+
+/* wrapper que replica o offset do grid no PC */
+#bottom-inner {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 380px;
+}
+
+@media (min-width: 768px) {
+  #bottom { padding: 8px 0 16px; }
+  #bottom-inner {
+    /* largura = grid total = 160 + 40 + 440 = 640px */
+    width: 640px;
+    max-width: none;
+    /* deslocar para alinhar com col copy: padding-left = col-illo + gap */
+    padding-left: 200px; /* 160 + 40 */
+    align-items: flex-start;
+  }
+  #main-btn {
+    width: 440px; /* exatamente a largura da col copy */
+  }
+  .dots { justify-content: flex-start; }
+}
+
+/* botão principal */
+#main-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--green-dark);
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(0,0,0,.13);
+  transition: transform .15s, opacity .15s;
+}
+#main-btn:active { transform: scale(.98); }
+#main-btn:disabled { opacity: .4; cursor: default; transform: none; }
+#main-btn.green { background: var(--green); color: #fff; }
+
+/* dots */
+.dots { display: flex; gap: 6px; }
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.3);
+  transition: background .3s, width .3s;
+}
+.dot.on { background: #fff; width: 18px; border-radius: 3px; }
+
+/* ══════════════════════════════════════
+   MODAL TAREFA
+══════════════════════════════════════ */
+#modal {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.42);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 30;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .32s;
+}
+#modal.show { opacity: 1; pointer-events: auto; }
+
+#modal-box {
+  width: 100%;
+  max-width: 520px;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  padding: 16px 20px 32px;
+  transform: translateY(100%);
+  transition: transform .38s cubic-bezier(.4,0,.2,1);
+}
+#modal.show #modal-box { transform: translateY(0); }
+
+@media (min-width: 768px) {
+  #modal { align-items: center; }
+  #modal-box {
+    border-radius: 20px;
+    max-height: 88vh;
+    overflow-y: auto;
+    transform: translateY(20px) scale(.97);
+    opacity: 0;
+    transition: transform .38s cubic-bezier(.4,0,.2,1), opacity .38s;
+  }
+  #modal.show #modal-box { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.modal-drag {
+  width: 36px; height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto 14px;
+}
+@media (min-width: 768px) { .modal-drag { display: none; } }
+.modal-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 16px; }
+
+.modal-btn {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 12px;
+  background: var(--green);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: opacity .15s;
+}
+.modal-btn:active { opacity: .85; }
+
+/* confetti */
+#confetti { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+
+/* shake */
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-6px)} 40%{transform:translateX(6px)}
+  60%{transform:translateX(-4px)} 80%{transform:translateX(4px)}
+}
+</style>
+</head>
+<body>
+<div id="shell">
+
+  <!-- progresso -->
+  <div id="prog-bar"><div id="prog-fill"></div></div>
+  <button id="btn-skip" onclick="skip()">Pular →</button>
+  <canvas id="confetti"></canvas>
+
+  <!-- ══════ STEPS ══════ -->
+  <div id="steps-area">
+
+    <!-- 0: boas-vindas -->
+    <div class="step active" id="s0">
+      <div class="step-body">
+        <div class="illo">💡</div>
+        <div class="copy">
+          <div class="tag">Bem-vindo</div>
+          <div class="headline">Sua vida,<br>organizada do jeito certo</div>
+          <div class="body-text">
+            O <b>My Life on Hub</b> é um painel pessoal<br>
+            onde você gerencia tarefas, projetos<br>
+            e metas de saúde — tudo em um só lugar.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1: como funciona -->
+    <div class="step" id="s1">
+      <div class="step-body">
+        <div class="illo">🗂️</div>
+        <div class="copy">
+          <div class="tag">Como funciona</div>
+          <div class="headline">Frentes, tarefas<br>e projetos</div>
+          <div class="body-text">
+            Você organiza sua vida em <b>frentes</b><br>
+            (Saúde, Trabalho, Pessoal…).<br>
+            Dentro de cada frente ficam suas <b>tarefas</b>,<br>
+            que podem pertencer a um <b>projeto</b>.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2: saúde -->
+    <div class="step" id="s2">
+      <div class="step-body">
+        <div class="illo">⚖️</div>
+        <div class="copy">
+          <div class="tag">Saúde</div>
+          <div class="headline">Acompanhe<br>seu corpo também</div>
+          <div class="body-text">
+            Além das tarefas, o app tem um tracker<br>
+            de <b>peso</b>, <b>gordura corporal</b> e <b>IMC</b><br>
+            com histórico visual da sua evolução.
+          </div>
+          <div class="health-pills">
+            <div class="hpill"><div class="hpill-icon">⚖️</div><div class="hpill-label">Peso</div></div>
+            <div class="hpill"><div class="hpill-icon">📉</div><div class="hpill-label">Gordura %</div></div>
+            <div class="hpill"><div class="hpill-icon">📊</div><div class="hpill-label">IMC</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3: criar tarefa (aciona modal) -->
+    <div class="step" id="s3">
+      <div class="step-body">
+        <div class="illo">✅</div>
+        <div class="copy">
+          <div class="tag">Vamos começar</div>
+          <div class="headline">Crie sua<br>primeira tarefa</div>
+          <div class="body-text">
+            Clique no botão abaixo para abrir<br>
+            o formulário e cadastrar sua<br>
+            primeira tarefa de verdade.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4: tarefa salva -->
+    <div class="step" id="s4">
+      <div class="step-body has-card">
+        <div class="illo">🎉</div>
+        <div class="copy">
+          <div class="tag">Ótimo trabalho!</div>
+          <div class="headline">Tarefa salva<br>no seu painel</div>
+          <div class="body-text">
+            Ela já aparece no seu <b>Dashboard</b>.<br>
+            Filtre por hoje, urgentes, atrasadas<br>
+            e muito mais.
+          </div>
+          <div class="white-card">
+            <div class="task-row">
+              <div class="task-chk"></div>
+              <div>
+                <div class="task-name" id="prev-name">—</div>
+                <div class="task-meta" id="prev-meta">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5: meta de peso -->
+    <div class="step" id="s5">
+      <div class="step-body has-card">
+        <div class="illo">🎯</div>
+        <div class="copy">
+          <div class="tag">Meta de saúde</div>
+          <div class="headline">Defina seu peso ideal</div>
+          <div class="body-text">
+            Registre seu peso atual e uma meta.<br>
+            O app calcula seu <b>IMC</b> e acompanha sua evolução.
+          </div>
+          <div class="white-card">
+            <div class="card-title">Tracker Corporal</div>
+            <div class="card-sub">Preencha para ativar seu acompanhamento</div>
+            <div class="f-row">
+              <label class="f-label">Peso atual (kg)</label>
+              <input type="number" class="f-inp" id="inp-peso" placeholder="ex: 82.5" inputmode="decimal" min="30" max="300" step="0.1">
+            </div>
+            <div class="f-row">
+              <label class="f-label">Meta de peso (kg)</label>
+              <input type="number" class="f-inp" id="inp-meta" placeholder="ex: 75.0" inputmode="decimal" min="30" max="300" step="0.1">
+            </div>
+            <div class="f-row">
+              <label class="f-label">Altura (cm)</label>
+              <input type="number" class="f-inp" id="inp-alt" placeholder="ex: 178" inputmode="numeric" min="100" max="230" step="1" style="margin-bottom:0">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6: confirmação saúde -->
+    <div class="step" id="s6">
+      <div class="step-body has-card">
+        <div class="illo">💪</div>
+        <div class="copy">
+          <div class="tag">Registrado!</div>
+          <div class="headline">Seu tracker está ativo</div>
+          <div class="body-text">
+            Sempre que quiser registrar um novo peso,<br>
+            acesse o painel <b>Corpo</b> no app.
+          </div>
+          <div class="white-card">
+            <div class="wt-row">
+              <div class="wt-box"><div class="wt-val" id="conf-peso">—</div><div class="wt-label">Peso atual</div></div>
+              <div class="wt-box"><div class="wt-val" id="conf-meta">—</div><div class="wt-label">Meta</div></div>
+              <div class="wt-box"><div class="wt-val" id="conf-imc">—</div><div class="wt-label">IMC</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7: conclusão -->
+    <div class="step" id="s7">
+      <div class="step-body">
+        <div class="illo">🚀</div>
+        <div class="copy">
+          <div class="tag">Pronto!</div>
+          <div class="headline">Tudo certo<br>para começar</div>
+          <div class="body-text">
+            Seu painel está configurado.<br>
+            Explore as <b>frentes</b>, crie <b>projetos</b><br>
+            e mantenha o ritmo. Boa sorte! 💪
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /steps-area -->
+
+  <!-- ══ MODAL TAREFA ══ -->
+  <div id="modal">
+    <div id="modal-box">
+      <div class="modal-drag"></div>
+      <div class="modal-title">+ Nova Tarefa</div>
+
+      <div class="f-row">
+        <label class="f-label">O que você precisa fazer? *</label>
+        <input type="text" class="f-inp" id="mt-txt" placeholder="Digite a tarefa…" maxlength="200">
+      </div>
+
+      <div class="f-row" style="margin-bottom:10px">
+        <label class="f-label">Frente *</label>
+        <div class="cs-wrap" id="cs-grupo">
+          <div class="cs-trig ph" id="cs-grupo-trig" onclick="toggleCS('grupo')">
+            <span id="cs-grupo-lbl">Selecione a frente…</span>
+            <span class="cs-arr" id="cs-grupo-arr">▼</span>
+          </div>
+          <div class="cs-drop" id="cs-grupo-drop">
+            <div class="cs-opt" onclick="pickGrupo('saude','🏃 Saúde')">🏃 Saúde</div>
+            <div class="cs-opt" onclick="pickGrupo('trabalho','💼 Trabalho')">💼 Trabalho</div>
+            <div class="cs-opt" onclick="pickGrupo('pessoal','👤 Pessoal')">👤 Pessoal</div>
+            <div class="cs-opt" onclick="pickGrupo('financas','💰 Finanças')">💰 Finanças</div>
+            <div class="cs-opt" onclick="pickGrupo('estudos','📚 Estudos')">📚 Estudos</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="f-row" style="margin-bottom:10px">
+        <label class="f-label">Prioridade</label>
+        <div class="cs-wrap" id="cs-prio">
+          <div class="cs-trig ph" id="cs-prio-trig" onclick="toggleCS('prio')">
+            <span id="cs-prio-lbl">Selecione…</span>
+            <span class="cs-arr" id="cs-prio-arr">▼</span>
+          </div>
+          <div class="cs-drop" id="cs-prio-drop">
+            <div class="cs-opt" onclick="pickPrio('urgente','🔴 Urgente')">🔴 Urgente</div>
+            <div class="cs-opt" onclick="pickPrio('alta','🟠 Alta')">🟠 Alta</div>
+            <div class="cs-opt" onclick="pickPrio('baixa','⚪ Baixa')">⚪ Baixa</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="f-row" style="margin-bottom:14px">
+        <label class="f-label">Data limite (opcional)</label>
+        <input type="date" class="f-inp" id="mt-data" style="margin-bottom:0">
+      </div>
+
+      <button class="modal-btn" onclick="saveTask()">Salvar tarefa ✓</button>
+    </div>
+  </div>
+
+  <!-- ══ BOTTOM ══ -->
+  <div id="bottom">
+    <div id="bottom-inner">
+      <button id="main-btn" onclick="next()">Continuar</button>
+      <div class="dots" id="dots"></div>
+    </div>
+  </div>
+
+</div><!-- /shell -->
+
+<script>
+const N = 8;
+let cur = 0;
+let savedTask = null, savedHealth = null;
+let grupoVal = null, grupoLbl = '';
+let prioVal  = null, prioLbl  = '';
+
+// init
+buildDots();
+updateProg();
+setToday();
+
+function setToday() {
+  const d = new Date();
+  document.getElementById('mt-data').value =
+    `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function buildDots() {
+  const el = document.getElementById('dots');
+  el.innerHTML = '';
+  for (let i = 0; i < N; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === cur ? ' on' : '');
+    el.appendChild(d);
+  }
+}
+
+function updateProg() {
+  document.getElementById('prog-fill').style.width = (cur / (N-1) * 100) + '%';
+}
+
+// ── navegação ──
+function next() {
+  if (cur === 3) { openModal(); return; }
+  if (cur === 5) { if (!saveHealth()) return; }
+  advance();
+}
+
+function advance() {
+  const old = document.getElementById('s' + cur);
+  old.classList.remove('active');
+  old.classList.add('exit');
+  setTimeout(() => old.classList.remove('exit'), 460);
+
+  cur++;
+  document.getElementById('s' + cur).classList.add('active');
+  buildDots();
+  updateProg();
+  syncBtn();
+  if (cur === N - 1) confetti();
+}
+
+function syncBtn() {
+  const btn = document.getElementById('main-btn');
+  const skip = document.getElementById('btn-skip');
+  btn.className = '';
+  btn.onclick = next;
+  btn.disabled = false;
+
+  if (cur === N - 1) {
+    btn.textContent = 'Ir para o app 🚀';
+    btn.className = 'green';
+    btn.onclick = finish;
+    skip.style.display = 'none';
+    return;
+  }
+  if (cur === 3) { btn.textContent = 'Criar minha primeira tarefa ✏️'; return; }
+  if (cur === 5) { btn.textContent = 'Salvar e continuar'; return; }
+  btn.textContent = 'Continuar';
+}
+
+function skip() {
+  if (confirm('Pular a configuração?\nVocê pode configurar tudo depois no app.')) finish();
+}
+
+function finish() {
+  const data = { task: savedTask, health: savedHealth };
+  console.log('[Onboarding] concluído:', data);
+  // Em produção: gravar onboardingDone no Firebase + redirect
+  alert('✅ Onboarding concluído!\n\nEm produção: marca onboardingDone no Firebase e redireciona.\n\n' + JSON.stringify(data, null, 2));
+}
+
+// ── modal ──
+function openModal() {
+  document.getElementById('modal').classList.add('show');
+  setTimeout(() => document.getElementById('mt-txt').focus(), 400);
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+function toggleCS(id) {
+  ['grupo','prio'].forEach(k => {
+    if (k !== id) {
+      document.getElementById('cs-'+k+'-drop').classList.remove('open');
+      document.getElementById('cs-'+k+'-arr').style.transform = '';
+    }
+  });
+  const drop = document.getElementById('cs-'+id+'-drop');
+  const arr  = document.getElementById('cs-'+id+'-arr');
+  const open = drop.classList.toggle('open');
+  arr.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+function pickGrupo(val, lbl) {
+  grupoVal = val; grupoLbl = lbl;
+  document.getElementById('cs-grupo-lbl').textContent = lbl;
+  document.getElementById('cs-grupo-trig').classList.remove('ph');
+  document.getElementById('cs-grupo-drop').classList.remove('open');
+  document.getElementById('cs-grupo-arr').style.transform = '';
+}
+
+function pickPrio(val, lbl) {
+  prioVal = val; prioLbl = lbl;
+  document.getElementById('cs-prio-lbl').textContent = lbl;
+  document.getElementById('cs-prio-trig').classList.remove('ph');
+  document.querySelectorAll('#cs-prio-drop .cs-opt').forEach(o =>
+    o.classList.toggle('sel', o.getAttribute('onclick').includes(`'${val}'`))
+  );
+  document.getElementById('cs-prio-drop').classList.remove('open');
+  document.getElementById('cs-prio-arr').style.transform = '';
+}
+
+function saveTask() {
+  const txt = document.getElementById('mt-txt').value.trim();
+  if (!txt)     { shake('mt-txt');   return; }
+  if (!grupoVal){ shake('cs-grupo'); return; }
+
+  const data = document.getElementById('mt-data').value;
+  savedTask = { txt, grupoVal, grupoLbl, prioVal, prioLbl, data };
+
+  document.getElementById('prev-name').textContent = txt;
+  const parts = [grupoLbl];
+  if (data) parts.push(fmt(data));
+  if (prioVal) parts.push(prioLbl);
+  document.getElementById('prev-meta').textContent = parts.join(' · ');
+
+  closeModal();
+  advance(); // → s4
+}
+
+function fmt(iso) {
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+// ── health ──
+function saveHealth() {
+  const peso = parseFloat(document.getElementById('inp-peso').value);
+  const meta = parseFloat(document.getElementById('inp-meta').value);
+  const alt  = parseFloat(document.getElementById('inp-alt').value);
+  if (!peso || peso < 30 || peso > 300) { shake('inp-peso'); return false; }
+  if (!meta || meta < 30 || meta > 300) { shake('inp-meta'); return false; }
+  if (!alt  || alt  < 100|| alt  > 230) { shake('inp-alt');  return false; }
+
+  const imc = (peso / ((alt/100)**2)).toFixed(1);
+  savedHealth = { peso, meta, alt, imc };
+  document.getElementById('conf-peso').textContent = peso + ' kg';
+  document.getElementById('conf-meta').textContent = meta + ' kg';
+  document.getElementById('conf-imc').textContent  = imc;
+  return true;
+}
+
+// ── confetti ──
+function confetti() {
+  const cv = document.getElementById('confetti');
+  const ctx = cv.getContext('2d');
+  cv.width = innerWidth; cv.height = innerHeight;
+  const ps = Array.from({length:90}, () => ({
+    x: Math.random()*cv.width,
+    y: Math.random()*-cv.height,
+    w: 6+Math.random()*6, h: 3+Math.random()*4,
+    c: ['#1D9E75','#5DCAA5','#fff','#FAEEDA','#E6F1FB'][Math.floor(Math.random()*5)],
+    vx:(Math.random()-.5)*3, vy:2+Math.random()*3,
+    rot:Math.random()*360, vr:(Math.random()-.5)*5,
+    on:true
+  }));
+  (function draw(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    let any=false;
+    ps.forEach(p=>{
+      if(!p.on) return;
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
+      if(p.y>cv.height+20){p.on=false;return;}
+      any=true;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.c; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    });
+    if(any) requestAnimationFrame(draw);
+  })();
+}
+
+// ── shake ──
+function shake(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.animation = 'none'; el.offsetHeight;
+  el.style.animation = 'shake .35s ease';
+}
+
+// ── fechar modal no backdrop ──
+document.getElementById('modal').addEventListener('click', function(e){
+  if (e.target === this) closeModal();
+});
+
+// ── fechar custom selects fora ──
+document.addEventListener('click', function(e){
+  if (!e.target.closest('.cs-wrap')) {
+    document.querySelectorAll('.cs-drop.open').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.cs-arr').forEach(a => a.style.transform = '');
+  }
+});
+</script>
+</body>
+</html>
